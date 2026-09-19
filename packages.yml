@@ -1,56 +1,65 @@
-Pipelines:
+meta-code:
+  - box
+  - pacman
+  - config
+  - assert
+  - logr
+
+timing:
+  - bench
+  - tictoc
+
+pipelines:
   - targets
   - tarchetypes
 
-Parallel & Futures:
+parallel:
   - future
   - futurize
-  - mirari
+  - furrr
+  - mirai
   - crew
   - progressr
+  - parallelly
 
-Package & Code Org:
-  - box
-  - config
+dplyr backends:
+  - dtplyr
+  - dbplyr
+  - duckplyr
 
-Pure IO & Formats:
+big data:
+  - data.table
+  - collapse
+  - polars
+  - duckdb
+  - arrow
+  - tidytables
+
+read-write:
   - qs
   - qs2
   - nanoparquet
   - fst
   - arrow
 
-dplyr Backends:
-  - dtplyr
-  - dbplyr
-  - duckplyr
-
-High-Perf Data Prep:
-  - data.table
-  - collapse
-  - polars
-  - duckdb
-  - tidytables
-
-Benchmarking & Utilities:
-  - bench
-  - tictoc
-
-Tables & Reporting:
-  - gt
-  - gtsummary
-  - modelsummary
-  - sjPlot
-
-Survey & Epi Analysis:
+surveys:
+  - surveyanalaysis
   - srvyr
   - survey
   - sampling
   - anesrake
   - weighting
   - Hmisc
+
+epi:
   - epiR
   - epitools
+
+tables:
+  - gt
+  - gtsummary
+  - modelsummary
+  - sjPlot
 
 easystats:
   - easystats
@@ -76,8 +85,15 @@ tidymodels:
   - infer
   - broom
 
-Other Utilities:
+xlsx:
+  - readxl
+  - openxlsx
+  - openxlsx2
+  - writexl
+
+other:
   - datadiff
   - janitor
   - zeallot
-  - data.table
+  - listenv
+
