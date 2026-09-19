@@ -1,0 +1,83 @@
+Pipelines:
+  - targets
+  - tarchetypes
+
+Parallel & Futures:
+  - future
+  - futurize
+  - mirari
+  - crew
+  - progressr
+
+Package & Code Org:
+  - box
+  - config
+
+Pure IO & Formats:
+  - qs
+  - qs2
+  - nanoparquet
+  - fst
+  - arrow
+
+dplyr Backends:
+  - dtplyr
+  - dbplyr
+  - duckplyr
+
+High-Perf Data Prep:
+  - data.table
+  - collapse
+  - polars
+  - duckdb
+  - tidytables
+
+Benchmarking & Utilities:
+  - bench
+  - tictoc
+
+Tables & Reporting:
+  - gt
+  - gtsummary
+  - modelsummary
+  - sjPlot
+
+Survey & Epi Analysis:
+  - srvyr
+  - survey
+  - sampling
+  - anesrake
+  - weighting
+  - Hmisc
+  - epiR
+  - epitools
+
+easystats:
+  - easystats
+  - insight
+  - bayestestR
+  - parameters
+  - performance
+  - effectsize
+  - modelbased
+  - report
+  - correlation
+  - see
+
+tidymodels:
+  - tidymodels
+  - rsample
+  - recipes
+  - parsnip
+  - yardstick
+  - workflows
+  - tune
+  - dials
+  - infer
+  - broom
+
+Other Utilities:
+  - datadiff
+  - janitor
+  - zeallot
+  - data.table
