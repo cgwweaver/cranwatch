@@ -1,6 +1,9 @@
-meta-code:
+packages:
   - box
+  - pak
   - pacman
+
+meta-code:
   - config
   - assert
   - logr
@@ -12,6 +15,8 @@ timing:
 pipelines:
   - targets
   - tarchetypes
+  - targetopia
+  - sqltargets
 
 parallel:
   - future
@@ -29,7 +34,6 @@ dplyr backends:
 
 big data:
   - data.table
-  - collapse
   - polars
   - duckdb
   - arrow
@@ -96,4 +100,5 @@ other:
   - janitor
   - zeallot
   - listenv
+  - collapse
 
