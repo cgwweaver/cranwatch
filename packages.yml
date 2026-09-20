@@ -93,12 +93,14 @@ xlsx:
   - readxl
   - openxlsx
   - openxlsx2
-  - writexl
+  - writexl   # ?
 
 other:
-  - datadiff
+  - datadiff # Hadley
   - janitor
-  - zeallot
-  - listenv
-  - collapse
+  - zeallot  # py multi assignment
+  - listenv  # auth same as future
+  - collapse # fmedian
+  - tidyboot # ?
+  - modelr   # older (rsample newer)
 
