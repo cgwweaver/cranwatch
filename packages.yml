@@ -6,6 +6,8 @@ packages:
 meta-code:
   - config
   - assert
+  - logger
+  - futile.logger
   - logr
 
 timing:
