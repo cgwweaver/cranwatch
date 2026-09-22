@@ -6,6 +6,8 @@ packages:
 meta-code:
   - config
   - assert
+  - cli
+  - here
   - logger
   - futile.logger
   - logr
@@ -98,6 +100,7 @@ xlsx:
   - writexl   # ?
 
 other:
+  - lobstr
   - datadiff # Hadley
   - janitor
   - zeallot  # py multi assignment
