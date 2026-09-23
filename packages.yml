@@ -43,15 +43,16 @@ big data:
   - data.table
   - polars
   - duckdb
-  - arrow
+  - arrow #*
   - tidytables
 
 read-write:
   - qs
   - qs2
-  - nanoparquet
+  - nanoparquet # tidyverse!
   - fst
-  - arrow
+  - arrow #*
+  - vroom # tidyverse!
 
 surveys:
   - surveyanalaysis
@@ -106,6 +107,8 @@ other:
   - config
   - datadiff # Hadley
   - janitor
+  - glue     # tidyverse!
+  - magrittr # tidyverse!
   - zeallot  # py multi assignment
   - listenv  # auth same as future
   - collapse # fmedian
@@ -113,4 +116,8 @@ other:
   - modelr   # older (rsample newer)
   - keyring
   - gert
+
+no:
+  - stats::xtabs()
+
 
