@@ -6,7 +6,7 @@ packages:
 meta-code:
   - devtools
   - here
-  - assert
+  - assertthat
   - cli
 
 log:
