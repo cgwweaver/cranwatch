@@ -4,15 +4,18 @@ packages:
   - pacman
 
 meta-code:
-  - config
+  - devtools
+  - here
   - assert
   - cli
-  - here
+
+log:
   - logger
   - futile.logger
   - logr
 
 timing:
+  - lobstr
   - bench
   - tictoc
 
@@ -100,7 +103,7 @@ xlsx:
   - writexl   # ?
 
 other:
-  - lobstr
+  - config
   - datadiff # Hadley
   - janitor
   - zeallot  # py multi assignment
@@ -108,4 +111,6 @@ other:
   - collapse # fmedian
   - tidyboot # ?
   - modelr   # older (rsample newer)
+  - keyring
+  - gert
 
