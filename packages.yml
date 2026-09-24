@@ -105,6 +105,7 @@ tidymodels:
   - dials
   - infer
   - broom
+  - modeldb # GH
 
 xlsx:
   - readxl
@@ -133,6 +134,20 @@ data-cleaning/:
   - deducorrect
   - deriverules
   - drat
+
+dbplyr related:
+  - dbplyrExtra
+  - dbplyr_helpers
+  - demoadbcplyr
+  - halpo/pivot
+  - dabases-w-r
+  
+  - intro-database-r
+  - bigrquery
+  - r-polarssql
+  - oRm
+  - ducklake-r
+  - dplyneage
 
 other:
   - config
