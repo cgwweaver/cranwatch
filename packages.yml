@@ -112,6 +112,28 @@ xlsx:
   - openxlsx2
   - writexl   # ?
 
+data-cleaning/:
+  - book
+  - IW2024
+  - datacleaning
+  - data.log
+  - validate
+  - validate.viz
+  - validatereport
+  - ValidatReport
+  - validatedb
+  - validaterules
+  - validatetools
+  - valedatesuggest
+  - errorlocate
+  - editrules
+  - dcmodify
+  - dcmodifydb
+  - deductive
+  - deducorrect
+  - deriverules
+  - drat
+
 other:
   - config
   - datadiff # Hadley
