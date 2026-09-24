@@ -33,6 +33,7 @@ parallel:
   - crew
   - progressr
   - parallelly
+  - promises
 
 dplyr backends:
   - dbplyr # only one that does remote (Oracle etc)?
