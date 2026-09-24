@@ -2,6 +2,7 @@ packages:
   - box
   - pak
   - pacman
+  - rig
 
 meta-code:
   - devtools
@@ -9,6 +10,8 @@ meta-code:
   - here
   - cli
   - assertthat
+
+lint/style:
   - lintr
   - stylr # exists?
   - styler # exists?
@@ -18,7 +21,7 @@ log:
   - futile.logger
   - logr
 
-timing:
+timing/measuring:
   - lobstr
   - bench
   - tictoc
