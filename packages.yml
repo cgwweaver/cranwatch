@@ -105,7 +105,8 @@ tidymodels:
   - dials
   - infer
   - broom
-  - modeldb # GH
+  - modeldb     # GH
+  - tidypredict # GH
 
 xlsx:
   - readxl
@@ -141,7 +142,9 @@ dbplyr related:
   - demoadbcplyr
   - halpo/pivot
   - dabases-w-r
-  
+
+github, data:
+  - cynkra/dm
   - intro-database-r
   - bigrquery
   - r-polarssql
