@@ -81,7 +81,7 @@ epi:
   - epiR
   - epitools # CRAN deadline...
 
-tables:
+tables: # https://github.com/sfirke/packagemetrics/blob/master/README_files/figure-markdown_github/unnamed-chunk-3-1.png
   - gt
   - gtable
   - knitr
@@ -164,6 +164,11 @@ github, data:
   - ducklake-r
   - dplyneage
 
+llms:
+  - ellmer   # tidyverse!
+  - mcptools
+  - shinychat
+
 other:
   - config
   - datadiff # Hadley
@@ -178,7 +183,7 @@ other:
   - modelr   # older (rsample newer) - but is tidyverse!
   - keyring
   - gert
-  - ellmer   # tidyverse!
+  - lambda.r
 
 no:
   - stats::xtabs()
