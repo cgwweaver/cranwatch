@@ -81,6 +81,9 @@ tables:
   - gtsummary
   - modelsummary
   - sjPlot
+  - tidytab
+  - janitor #*
+  - tabyl   #*
 
 easystats:
   - easystats
@@ -155,7 +158,8 @@ github, data:
 other:
   - config
   - datadiff # Hadley
-  - janitor
+  - janitor  #*
+  - tabyl    #*
   - glue     # tidyverse!
   - magrittr # tidyverse!
   - zeallot  # py multi assignment
