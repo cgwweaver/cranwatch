@@ -116,6 +116,7 @@ tidymodels:
   - broom
   - modeldb     # GH
   - tidypredict # GH
+  - lorax       # GH
 
 xlsx:
   - readxl
@@ -175,6 +176,7 @@ other:
   - modelr   # older (rsample newer) - but is tidyverse!
   - keyring
   - gert
+  - ellmer   # tidyverse!
 
 no:
   - stats::xtabs()
