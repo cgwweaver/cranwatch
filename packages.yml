@@ -10,6 +10,7 @@ meta-code:
   - here
   - cli
   - assertthat
+  - pointblank
 
 lint/style:
   - lintr
@@ -71,6 +72,8 @@ surveys:
   - anesrake
   - weighting
   - Hmisc
+  - surveydata
+  - questionr
 
 epi:
   - epiR
@@ -78,12 +81,15 @@ epi:
 
 tables:
   - gt
+  - gtable
+  - knitr
   - gtsummary
   - modelsummary
   - sjPlot
   - tidytab
   - janitor #*
   - tabyl   #*
+  - arsenal
 
 easystats:
   - easystats
@@ -173,4 +179,4 @@ other:
 no:
   - stats::xtabs()
 
-
+# https://github.com/sfirke/tidysurvey/issues
