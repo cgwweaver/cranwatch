@@ -32,13 +32,15 @@ pipelines:
   - tarchetypes
   - targetopia
   - sqltargets
+  - igraph # (same maintainer as duckdb) CRAN deadline...
+  - crew #*
 
 parallel:
   - future
   - futurize
   - furrr
   - mirai
-  - crew
+  - crew #*
   - progressr
   - parallelly
   - promises
@@ -52,7 +54,7 @@ dplyr backends:
 big data:
   - data.table
   - polars
-  - duckdb
+  - duckdb # CRAN deadline...
   - arrow #*
   - tidytables
 
@@ -77,7 +79,7 @@ surveys:
 
 epi:
   - epiR
-  - epitools
+  - epitools # CRAN deadline...
 
 tables:
   - gt
@@ -107,7 +109,7 @@ tidymodels:
   - tidymodels
   - rsample
   - recipes
-  - parsnip
+  - parsnip # CRAN deadline...
   - yardstick
   - workflows
   - tune
