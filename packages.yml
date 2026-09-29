@@ -81,6 +81,7 @@ read-write:
   - qs # depr?
   - qs2
   - RcppParallel # dep for qs2
+  - RcppTOML
   - nanoparquet # tidyverse!
   - fst
   - arrow #*
