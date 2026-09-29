@@ -21,6 +21,7 @@ log:
   - logger
   - futile.logger
   - logr
+  - progressr #*
 
 timing/measuring:
   - lobstr
@@ -32,7 +33,7 @@ pipelines:
   - tarchetypes
   - targetopia
   - sqltargets
-  - igraph # (same maintainer as duckdb) CRAN deadline...
+  - igraph # dep for targets. (same maintainer as duckdb) CRAN deadline...
   - crew #*
 
 parallel:
@@ -41,9 +42,9 @@ parallel:
   - furrr
   - mirai
   - crew #*
-  - progressr
   - parallelly
   - promises
+  - progressr #*
 
 dplyr backends:
   - dbplyr # only one that does remote (Oracle etc)?
@@ -59,8 +60,9 @@ big data:
   - tidytables
 
 read-write:
-  - qs
+  - qs # depr?
   - qs2
+  - RcppParallel # dep for qs2
   - nanoparquet # tidyverse!
   - fst
   - arrow #*
