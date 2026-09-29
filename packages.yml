@@ -7,13 +7,26 @@ packages:
 
 meta-code:
   - devtools
+  - pkgconfig
   - usethis # tidyverse. workflow: setup/dev
   - here
+  - callr
+  - withr
+  - testthat
+  - vdiffr # testthat like but visual? 
   - os # os eg copy?
   - fs # file sys eg copy?
   - cli
   - crayon # tidyverse cli colour?
   - pillar # for tibble
+  - hms
+  - vctrs
+  - funs
+  - scales
+  - stats4
+  - tcltk
+  - RSQLite
+  - lifecycle
   - assertthat
   - pointblank
 
