@@ -5,4 +5,5 @@ or had cran deadline ever/recently?
 see:
 - https://github.com/sfirke/packagemetrics
 - https://github.com/hadley/cran-downloads
+- https://github.com/hadley/cran-deadlines
 
