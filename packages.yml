@@ -90,6 +90,8 @@ tables: # https://github.com/sfirke/packagemetrics/blob/master/README_files/figu
   - gt
   - gtable
   - knitr
+  - kableExtra
+  - rmarkdown # ?
   - gtsummary
   - modelsummary
   - sjPlot
@@ -97,6 +99,10 @@ tables: # https://github.com/sfirke/packagemetrics/blob/master/README_files/figu
   - janitor #*
   - tabyl   #*
   - arsenal
+
+plots:
+  - ggarrange
+  - gridExtra
 
 easystats:
   - easystats
@@ -191,7 +197,8 @@ other:
   - oskey # ?
   - gert
   - lambda.r
-  - yaml # ?
+  - yaml
+  - jsonlite
 
 no:
   - stats::xtabs()
