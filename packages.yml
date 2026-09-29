@@ -1,9 +1,11 @@
 packages:
+  - renv
   - remotes
   - box
   - pak
   - pacman
   - rig
+  - packrat
 
 meta-code:
   - devtools
