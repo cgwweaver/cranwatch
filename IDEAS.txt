@@ -1,9 +1,28 @@
 
-identify if pkgs taken off cran ever/past year?
-or had cran deadline ever/recently?
+surveyanalysis - compare w gest?!
 
-see:
-- https://github.com/sfirke/packagemetrics
-- https://github.com/hadley/cran-downloads
-- https://github.com/hadley/cran-deadlines
+
+identify if pkgs taken off cran ever/past year?
+or had cran deadline ever/recently/now?
+
+map dep? no?
+
+
+==system dep esp linux, k8s, Jupyter-like
+fs
+terra
+igraph (lbxml?) -> targets
+Rcpp?
+RcppParallel (cmake) -> qs2
+
+
+==non-R - just sql? long install time too?! gensys?
+sql magics - jupyter ext or something?
+duckdb-cli?
+
+
+==see:
+https://github.com/sfirke/packagemetrics
+https://github.com/hadley/cran-downloads
+https://github.com/hadley/cran-deadlines
 
