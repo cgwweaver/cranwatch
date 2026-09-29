@@ -16,6 +16,7 @@ meta-code:
   - vdiffr # testthat like but visual? 
   - os # os eg copy?
   - fs # file sys eg copy?
+  - ps
   - cli
   - crayon # tidyverse cli colour?
   - pillar # for tibble
