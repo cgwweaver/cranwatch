@@ -196,7 +196,7 @@ other:
   - getPass
   - oskey # ?
   - gert
-  - lambda.r
+  - lambda.r # cran deadline...
   - yaml
   - jsonlite
 
