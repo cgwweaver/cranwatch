@@ -81,6 +81,7 @@ surveys:
   - Hmisc
   - surveydata
   - questionr
+  - sae # cran deadline...
 
 epi:
   - epiR
@@ -98,7 +99,7 @@ tables: # https://github.com/sfirke/packagemetrics/blob/master/README_files/figu
   - tidytab
   - janitor #*
   - tabyl   #*
-  - arsenal
+  - arsenal # cran deatline...
 
 plots:
   - ggarrange
@@ -128,7 +129,7 @@ tidymodels:
   - infer
   - broom
   - modeldb     # GH
-  - tidypredict # GH
+  - tidypredict # GH. cran deadline...
   - lorax       # GH
 
 xlsx:
@@ -181,7 +182,8 @@ llms:
   - shinychat
 
 other:
-  - config
+  - config   # posit
+  - configr  # cran deadline...
   - datadiff # Hadley
   - janitor  #*
   - tabyl    #*
@@ -199,6 +201,7 @@ other:
   - lambda.r # cran deadline...
   - yaml
   - jsonlite
+  - prettydoc
 
 no:
   - stats::xtabs()
