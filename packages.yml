@@ -63,6 +63,8 @@ parallel:
   - parallelly
   - promises
   - progressr #*
+  - interprocess # gh...
+  - jobqueue # gh...
 
 dplyr backends:
   - dbplyr # only one that does remote (Oracle etc)?
