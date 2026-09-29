@@ -12,6 +12,8 @@ meta-code:
   - os # os eg copy?
   - fs # file sys eg copy?
   - cli
+  - crayon # tidyverse cli colour?
+  - pillar # for tibble
   - assertthat
   - pointblank
 
