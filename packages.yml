@@ -221,6 +221,8 @@ other:
   - yaml
   - jsonlite
   - prettydoc
+  - ArCo
+  - bslib # w shiny/for websites?
 
 no:
   - stats::xtabs()
