@@ -226,4 +226,7 @@ no:
 # https://hadley.github.io/cran-deadlines/
 # https://github.com/sfirke/tidysurvey/issues
 
+# imports vs depends: https://stackoverflow.com/questions/8637993/better-explanation-of-when-to-use-imports-depends
+# try run search()
+
 
