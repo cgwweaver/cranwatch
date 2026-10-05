@@ -1,6 +1,11 @@
 
 surveyanalysis - compare w gest?!
 
+---
+
+Claude: xxx
+
+---
 
 identify if pkgs taken off cran ever/past year?
 or had cran deadline ever/recently/now?
@@ -31,4 +36,24 @@ duckdb-cli?
 https://github.com/sfirke/packagemetrics
 https://github.com/hadley/cran-downloads - shiny app
 https://github.com/hadley/cran-deadlines - incl dep count
+
+
+
+https://www.r-pkg.org/services#crandb
+
+METACRAN APIs
+Overview
+Several METACRAN services offer a public API. The API is over HTTP, and data is sent and received as JSON.
+
+Package database
+Database of all CRAN R packages. It is a CouchDB database, hosted at https://crandb.r-pkg.org/. Its API is discussed at the project page: https://github.com/metacran/crandb.
+
+Package search
+Search service that indexes package metadata. It is provided by an Elasticsearch server, that exposes its search API. It is hosted at http://seer.r-pkg.org:9200/_search, and its API is the standard Elasticsearch API.
+
+Package downloads
+Download summaries from the RStudio CRAN mirror, taken from http://cran-logs.rstudio.com/. It is hosted http://cranlogs.r-pkg.org and its API is discussed at the project page: https://github.com/metacran/cranlogs.app.
+
+R versions
+Small API that reports current and old R versions. It is hosted at https://rversions.r-pkg.org and it API is documented at the project page: https://github.com/metacran/rversions.app.
 
