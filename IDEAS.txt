@@ -9,6 +9,11 @@ map deps/imports? no?
 useful tho count rev deps and rev deps of rev deps...?
 like igraph v dep on bc targets (a rev dep) has lots rev dep!
 
+track if has: "NeedsCompilation:	yes"
+
+track if dep/imp/sysreq is optional? eg: "SystemRequirements:	libxml2 (optional), glpk (>= 4.57, optional)"
+
+
 ==system dep esp linux, k8s, Jupyter-like
 fs
 terra
