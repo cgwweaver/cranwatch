@@ -6,7 +6,8 @@ identify if pkgs taken off cran ever/past year?
 or had cran deadline ever/recently/now?
 
 map dep? no?
-
+useful tho count rev deps and rev deps of rev deps...?
+like igraph v dep on bc targets (a rev dep) has lots rev dep!
 
 ==system dep esp linux, k8s, Jupyter-like
 fs
