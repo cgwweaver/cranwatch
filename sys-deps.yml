@@ -1,0 +1,6 @@
+compile-only:
+  - cmake
+
+run:
+  - libxml2
+  
