@@ -23,6 +23,6 @@ duckdb-cli?
 
 ==see:
 https://github.com/sfirke/packagemetrics
-https://github.com/hadley/cran-downloads
-https://github.com/hadley/cran-deadlines
+https://github.com/hadley/cran-downloads - shiny app
+https://github.com/hadley/cran-deadlines - incl dep count
 
