@@ -7,12 +7,15 @@ Claude: xxx
 
 ---
 
+"R package download stats from CRAN"
+
 identify if pkgs taken off cran ever/past year?
 or had cran deadline ever/recently/now?
 
 map deps/imports? no?
 useful tho count rev deps and rev deps of rev deps...?
 like igraph v dep on bc targets (a rev dep) has lots rev dep!
+if 3+ rev deps w score >10 on r uni, list top3 pkgs-score
 
 track if has: "NeedsCompilation:	yes"
 
