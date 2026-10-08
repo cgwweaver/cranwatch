@@ -1,0 +1,29 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "cranwatch"
+  site-url: "https://cgwweaver.github.io/cranwatch/"
+  repo-url: "https://github.com/cgwweaver/cranwatch"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Radar
+      - href: about.qmd
+        text: Columns & sources
+    right:
+      - icon: github
+        href: "https://github.com/cgwweaver/cranwatch"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    page-layout: full
+    toc: false
+
+execute:
+  echo: false
+  warning: false
+  message: false

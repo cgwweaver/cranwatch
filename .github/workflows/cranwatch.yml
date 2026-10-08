@@ -1,0 +1,109 @@
+name: cranwatch
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC (Sunday night in Calgary)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "packages.yml"
+      - "links.yml"
+      - "sys-deps.yml"
+      - "run.R"
+      - "R/**"
+      - "site/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - ".github/**"
+  pull_request: # dry run: fetch + render, no commit / issue / deploy
+    paths:
+      - "packages.yml"
+      - "links.yml"
+      - "sys-deps.yml"
+      - "run.R"
+      - "R/**"
+      - "site/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - ".github/**"
+
+permissions:
+  contents: write # commit snapshots
+  issues: write # alert issue
+  pages: write # deploy site
+  id-token: write # deploy site
+
+concurrency:
+  group: cranwatch-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ALERT_MENTION: ${{ github.repository_owner }}
+      PUBLISH: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          needs: site
+
+      - name: Unit tests (offline, fake sources)
+        run: Rscript -e 'testthat::test_dir("tests/testthat", stop_on_failure = TRUE)'
+
+      - name: Fetch sources, write snapshot + alerts
+        run: Rscript run.R
+
+      - name: Commit snapshot
+        if: env.PUBLISH == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then echo "No data changes"; exit 0; fi
+          git commit -m "data: snapshot $(date -u +%F)"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+
+      - name: Sync alert issue
+        if: env.PUBLISH == 'true'
+        run: bash .github/scripts/sync-alert-issue.sh
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render site
+        run: quarto render site
+
+      - uses: actions/upload-pages-artifact@v3
+        if: env.PUBLISH == 'true'
+        with:
+          path: site/_site
+
+      - uses: actions/upload-artifact@v4
+        if: env.PUBLISH != 'true'
+        with:
+          name: site-preview
+          path: |
+            site/_site
+            data
+            _alerts
+
+  deploy:
+    needs: update
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

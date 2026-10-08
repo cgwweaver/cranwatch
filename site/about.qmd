@@ -1,0 +1,68 @@
+---
+title: "Columns & sources"
+---
+
+## What's tracked
+
+One row per package in [`packages.yml`](https://github.com/cgwweaver/cranwatch/blob/main/packages.yml), refreshed every Monday by GitHub Actions. Each run writes a dated snapshot to [`data/snapshots/`](https://github.com/cgwweaver/cranwatch/tree/main/data/snapshots), so trends build up over time.
+
+| Column | Meaning | Source |
+|---|---|---|
+| **status** | `base` (ships with R) · `cran` · `cran-archived` · `r-universe` (not on CRAN) · `github` (repo only) · `not-found` · `unknown` (a lookup API was down) | all |
+| **r-universe score** | Popularity/quality score r-universe uses to rank search results (formula below) | r-universe `/api/scores` |
+| stars, dependents, scripts, commits, contributors, vignettes, releases | The score's ingredients, kept as separate columns in the CSV | r-universe `/api/scores` |
+| **Downloads (yr)**, vs prev yr | Downloads over the last 365 days vs the 365 before | cranlogs |
+| **Deadline** | CRAN has asked the maintainer to fix check problems by this date or the package gets archived | `tools::CRAN_package_db()` |
+| **Times archived** | Distinct "Archived on" events in CRAN's notes. Hover for CRAN's latest comment | CRAN `PACKAGES.in` + package db |
+| **Compiles** | `NeedsCompilation: yes`: needs a compiler when installed from source | CRAN package db |
+| **Deps (recursive)** | Recursive Depends/Imports/LinkingTo, base R excluded: what a fresh install pulls in | CRAN package db |
+| ...that compile | How many of those deps need compiling. Matters on source-only mirrors | CRAN package db |
+| **System requirements** | The package's own `SystemRequirements` (optional ones say so), "via deps" = ones its dependencies bring in, "links" = libraries r-universe saw it link against | CRAN package db, r-universe `/stats/sysdeps` |
+| **Reverse deps: Direct** | CRAN packages that Depend/Import/LinkTo it | CRAN package db |
+| **Top (score > 10)** | The top 3 direct reverse deps by r-universe score, shown only when at least 3 score above 10 | CRAN + r-universe |
+| **Flags** | `deadline` · `archived` · `orphaned` (CRAN maintainer = ORPHANED) · `archived-past-yr` (archived then back within a year) · `new-past-yr` (no downloads in the previous year) · `not-found` · `gh-archived` · `watch-sysreq` (needs a library from [`sys-deps.yml`](https://github.com/cgwweaver/cranwatch/blob/main/sys-deps.yml)) | derived |
+
+## Alerts
+
+When a package gets a CRAN **deadline**, is **archived** or **orphaned**, can't be **found**, or its GitHub repo is **archived**, the workflow opens or updates a single issue labelled `cranwatch-alert` and @mentions the repo owner (= an email). It only comments when something is *new* since the previous snapshot, and closes the issue when nothing is flagged.
+
+## r-universe score formula
+
+From [`cranlike-server/routes/packages.js`](https://github.com/r-universe-org/cranlike-server/blob/master/routes/packages.js) (`calculate_score`). r-universe calls it a work in progress, so **use the components for trends, not the score**:
+
+$$
+\text{score} = 1 + \sum_i \log_{10}\big(\max(1, x_i)\big)
+$$
+
+| $x_i$ | Weight comment in source |
+|---|---|
+| GitHub stars | baseline |
+| 3 × reverse dependencies (recursive, across r-universe) | one revdep ≈ 3 stars |
+| GitHub scripts calling `library(pkg)` ÷ 10 | 10 scripts ≈ 1 star |
+| 10 × vignettes | one vignette ≈ 10 stars |
+| weeks with commits in the past year | |
+| contributors − 1 | |
+| 10 if on CRAN/Bioconductor | |
+| 5 if it has a README | |
+| monthly downloads ÷ 1000 | 1000 downloads ≈ 1 star |
+| min(mentions, 10) | capped, false positives |
+
+(Datasets are meant to count too, but a bug in the source, `Array.isArray(description._datasets * 5)`, means they never do.)
+
+## Data sources & rate limits
+
+| Source | What | Requests per run | Limits |
+|---|---|---|---|
+| [CRAN](https://cran.r-project.org/) `web/packages/packages.rds` via `tools::CRAN_package_db()` | Every current package's DESCRIPTION + CRAN fields (Deadline, X-CRAN-History) | 1 file | none; it's a static file |
+| CRAN `src/contrib/PACKAGES.in` | CRAN's notes incl. archived packages ("Archived on … as …") | 1 file | none |
+| [r-universe](https://docs.r-universe.dev/browse/api.html) `/api/scores` | Score + components for every indexed package (CRAN and GitHub-only) | 1 | no limit in the server code; no auth |
+| r-universe `/stats/sysdeps` | System libraries each package links against | 1 | same |
+| [cranlogs](https://github.com/metacran/cranlogs.app) `/downloads/total/<from>:<to>/<pkgs>` | Download totals | ~2 per 50 packages | none documented |
+| GitHub API | Stars/last push/archived, only for repos not found elsewhere | ≤ 2 per repo | 1000/h with the Actions token |
+
+## Caveats
+
+- **Downloads** come only from Posit's `cloud.r-project.org` mirror and include CI/bot installs. Compare packages relative to each other; don't read them as user counts.
+- **Deadline history** isn't published by CRAN. "Had a deadline before" only exists from the first snapshot onward.
+- **`NeedsCompilation` and system requirements** matter most when installing from **source**, e.g. an air-gapped Artifactory CRAN mirror with no Linux binaries.
+- GitHub-only packages have no CRAN fields (deadline, deps, compile info).

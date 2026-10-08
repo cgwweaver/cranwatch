@@ -1,0 +1,20 @@
+.muted { color: #6c757d; font-size: 0.85em; }
+.bad { color: #b02a37; font-weight: 600; }
+
+.flag {
+  display: inline-block;
+  margin: 1px 3px 1px 0;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  background: #e9ecef;
+  color: #343a40;
+}
+.flag-deadline, .flag-archived, .flag-orphaned, .flag-not-found, .flag-gh-archived { background: #f8d7da; color: #842029; }
+.flag-archived-past-yr, .flag-watch-sysreq { background: #fff3cd; color: #664d03; }
+.flag-new-past-yr { background: #d1e7dd; color: #0f5132; }
+
+.status { font-size: 0.85em; }
+.status-cran-archived, .status-not-found { color: #b02a37; }
+.status-unknown { color: #6c757d; font-style: italic; }
