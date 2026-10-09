@@ -154,11 +154,12 @@ test_that("partial runs only announce alerts that come from CRAN's own data", {
   root <- fake_root()
   arch <- \(repos) tibble(repo = "own/golf", gh_stars = 3, gh_pushed = test_today, gh_archived = TRUE, gh_is_pkg = TRUE) |> filter(repo %in% repos)
   main(root, test_today - 7, fake_fetchers(ru_index = \() stop("down"), github = arch))
-  new <- readLines(file.path(root, "_alerts", "new.md"))
-  expect_false(any(str_detect(new, "golf|hotel")))  # gh-archived / not-found wait for a complete run
-  expect_true(any(str_detect(new, "delta")))         # CRAN deadline is trusted
+  new    <- readLines(file.path(root, "_alerts", "new.md"))
+  active <- readLines(file.path(root, "_alerts", "active.md")) # would be the body if this run creates the issue
+  expect_false(any(str_detect(c(new, active), "golf|hotel"))) # gh-archived / not-found wait for a complete run
+  expect_true(any(str_detect(new, "delta")))                   # CRAN deadline is trusted
   main(root, test_today, fake_fetchers(github = arch))
-  expect_true(any(str_detect(readLines(file.path(root, "_alerts", "new.md")), "golf")))
+  expect_true(any(str_detect(readLines(file.path(root, "_alerts", "new.md")), "golf"))) # announced exactly once, now
 })
 
 test_that("a complete run forgets resolved alerts, so they can come back", {

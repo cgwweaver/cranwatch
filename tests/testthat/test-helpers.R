@@ -90,6 +90,9 @@ test_that("GitHub: repo-level errors = not found, GitHub-wide errors stop the so
   expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 403), remaining = "0")), "GitHub API 403") # rate limit
   expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 403))), "GitHub API 403")                  # bare 403: GitHub-wide
   expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 502))), "GitHub API 502")
+  latin1 <- \(...) response(status_code = 403, headers = list(`Content-Type` = "text/html"),
+                            body = iconv("Acc\u00e8s refus\u00e9", "UTF-8", "latin1", toRaw = TRUE)[[1]])
+  expect_error(gh_repo_info("o/r", latin1), "GitHub API 403")                                        # unreadable body
   expect_true(is.na(gh_repo_info("o/r", fake(list(`repos/o/r/contents/DESCRIPTION` = 502)))$gh_is_pkg))
   expect_false(gh_repo_info("o/r", fake(list(`repos/o/r/contents/DESCRIPTION` = 404)))$gh_is_pkg)
 })

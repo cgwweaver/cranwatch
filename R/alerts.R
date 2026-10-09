@@ -47,13 +47,17 @@ update_ledger <- function(ledger, active, new, today, complete) {
     arrange(package, type)
 }
 
-# Flagged now and not yet announced. In a partial run only alerts that come
-# from CRAN's own data are trusted: others (not-found, gh-archived) can be
-# artefacts of the outage, so they wait for a complete run.
+# In a partial run only alerts that come from CRAN's own data are trusted:
+# others (not-found, gh-archived) can be artefacts of the outage, so they wait
+# for a complete run, both for the comment and the issue body
+trusted_types <- function(degraded = character()) {
+  if (!length(degraded)) settings$alert_types else c("deadline", "orphaned", if (!"cran_in" %in% degraded) "archived")
+}
+
+# Flagged now, trusted, and not yet announced
 new_alerts <- function(snap, ledger, degraded = character()) {
-  trusted <- if (!length(degraded)) settings$alert_types else c("deadline", "orphaned", if (!"cran_in" %in% degraded) "archived")
   alerts_of(snap) |>
-    filter(type %in% trusted) |>
+    filter(type %in% trusted_types(degraded)) |>
     anti_join(ledger, by = alert_keys)
 }
 
@@ -68,14 +72,17 @@ write_alerts <- function(snap, ledger, prev_date, dir, degraded = character(), m
 
   active <- alerts_of(snap)
   new    <- new_alerts(snap, ledger, degraded)
+  # what the issue shows: in a partial run, trusted alerts + ones already announced
+  shown  <- if (!length(degraded)) active else
+    bind_rows(filter(active, type %in% trusted_types(degraded)), semi_join(active, ledger, by = alert_keys)) |> distinct()
   cc     <- if (nzchar(mention)) paste0("cc @", mention) else ""
 
   if (length(degraded)) writeLines(degraded, file.path(dir, "degraded"))
 
-  if (nrow(active)) writeLines(c(
+  if (nrow(shown)) writeLines(c(
     glue("## cranwatch alerts ({snap$run_date[1]})"), "",
     "| package | alert | details |", "|---|---|---|",
-    glue("| {active$package} | {active$type} | {active$detail} |"), "",
+    glue("| {shown$package} | {shown$type} | {shown$detail} |"), "",
     if (length(degraded)) c(glue("_Partial data: {paste(degraded, collapse = ', ')} failed this run, so some alerts may be missing._"), ""),
     glue("_Updated by the weekly [cranwatch]({settings$site_url}) run; closes itself when nothing is flagged._ {cc}")
   ), file.path(dir, "active.md"))

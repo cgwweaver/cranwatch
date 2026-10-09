@@ -35,7 +35,7 @@ gh_systemic <- function(resp) {
   # other 403 (rate limits, which may come without headers, a bad token, a
   # proxy) is GitHub-wide
   body <- tryCatch(resp_body_string(resp), error = \(e) "")
-  !str_detect(body, "(?i)repository access blocked|\"block\"\\s*:")
+  !isTRUE(str_detect(body, "(?i)repository access blocked|\"block\"\\s*:")) # unreadable body (NA): GitHub-wide
 }
 
 gh_get <- function(...) {
