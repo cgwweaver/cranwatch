@@ -1,4 +1,5 @@
 _alerts/
+_cache/
 site/_site/
 site/.quarto/
 site/*_files/

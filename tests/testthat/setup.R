@@ -22,25 +22,31 @@ fake_cran_in <- tibble(
   history = NA_character_
 )
 
-fake_scores <- tribble(
-  ~package, ~universe, ~score, ~stars, ~dependents,
-  "alpha", "me", 12, 40, 4,
-  "alpha", "fork", 3, 0, 0,
-  "beta", "cran", 8, 2, 1,
-  "rev1", "cran", 15, 1, 0,
-  "rev2", "cran", 20, 1, 0,
-  "rev3", "cran", 11, 1, 0,
-  "rev4", "cran", 5, 1, 0,
-  "foxtrot", "someone", 4, 9, 0
-) |>
-  add_na_cols(ru_fields, NA_real_) |>
-  mutate(universe = as.character(universe))
+# r-universe global index (search) + per-universe detail (score ingredients)
+fake_index <- tribble(
+  ~package, ~universe, ~score, ~stars, ~dependents, ~scripts,
+  "alpha", "me", 12, 40, 4, 0,
+  "alpha", "fork", 3, 0, 0, 0,
+  "beta", "cran", 8, 2, 1, 0,
+  "rev1", "cran", 15, 1, 0, 0,
+  "rev2", "cran", 20, 1, 0, 0,
+  "rev3", "cran", 11, 1, 0, 0,
+  "rev4", "cran", 5, 1, 0, 0,
+  "foxtrot", "someone", 4, 9, 0, 0
+)
+
+fake_detail <- \(picked) {
+  tibble(package = "alpha", universe = "me", score = 12, stars = 40, dependents = 4, scripts = 0,
+         downloads = 900, update_weeks = 6, commits = 30, contributors = 3, on_cran = TRUE, readme = TRUE) |>
+    semi_join(picked, by = c("package", "universe"))
+}
 
 fake_fetchers <- function(...) {
   list(
     cran_db    = \() add_na_cols(fake_db, cran_fields),
     cran_in    = \() fake_cran_in,
-    ru_scores  = \() fake_scores,
+    ru_index   = \() fake_index,
+    ru_detail  = fake_detail,
     ru_sysdeps = \() tibble(library = c("libxml2", "glpk"), package = "beta"),
     downloads  = \(pkgs, today) tibble(package = pkgs, dl_365 = 100, dl_prev365 = if_else(pkgs == "delta", 0, 50)) |>
       mutate(dl_growth = if_else(dl_prev365 > 0, dl_365 / dl_prev365 - 1, NA_real_)),

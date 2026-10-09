@@ -14,18 +14,22 @@ snapshot_cols <- c(
   published         = "date",
   link              = "chr",
   repo              = "chr",
-  # popularity: r-universe /api/scores
+  # popularity: r-universe score + the ingredients it's computed from
   ru_universe       = "chr",
   ru_score          = "dbl",
   ru_stars          = "dbl",
-  ru_dependents     = "dbl",
-  ru_scripts        = "dbl",
-  ru_downloads      = "dbl",
+  ru_dependents     = "dbl", # recursive, across all of r-universe
+  ru_scripts        = "dbl", # GitHub scripts that load it
+  ru_downloads      = "dbl", # last month, cranlogs
+  ru_mentions       = "dbl",
+  ru_update_weeks   = "dbl", # weeks with commits, past year
   ru_commits        = "dbl",
   ru_contributors   = "dbl",
   ru_vignettes      = "dbl",
   ru_datasets       = "dbl",
   ru_releases       = "dbl",
+  ru_on_cran        = "lgl",
+  ru_readme         = "lgl",
   # downloads: cranlogs (Posit CRAN mirror only)
   dl_365            = "dbl",
   dl_prev365        = "dbl",

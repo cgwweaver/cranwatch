@@ -14,6 +14,9 @@ test_that("full pipeline on fake sources", {
   # themes collapse, r-universe picks the top-scoring universe
   expect_equal(row("alpha")$themes, "core; other")
   expect_equal(row("alpha")$ru_universe, "me")
+  expect_equal(row("alpha")$ru_update_weeks, 6) # ingredients come from the detail fetch
+  expect_true(is.na(row("beta")$ru_update_weeks)) # ...index-only packages keep the headline numbers
+  expect_equal(row("beta")$ru_score, 8)
   expect_equal(row("alpha")$repo, "me/alpha")
 
   # archive history: Unarchived doesn't count, recent archival flagged
@@ -64,13 +67,13 @@ test_that("second run only reports what changed", {
 
 test_that("a failed lookup source gives 'unknown', not 'not-found' alerts", {
   root <- fake_root()
-  main(root, test_today, fake_fetchers(ru_scores = \() stop("r-universe down")))
+  main(root, test_today, fake_fetchers(ru_index = \() stop("r-universe down")))
   snap <- read_snapshot(file.path(root, "data", "latest.csv"))
 
   expect_equal(snap$status[snap$package %in% c("foxtrot", "hotel")], c("unknown", "unknown"))
   expect_true(all(is.na(snap$ru_score)))
   expect_false(any(str_detect(readLines(file.path(root, "_alerts", "active.md")), "not-found")))
-  expect_false(fromJSON(file.path(root, "data", "run.json"))$sources$ru_scores$ok)
+  expect_false(fromJSON(file.path(root, "data", "run.json"))$sources$ru_index$ok)
 })
 
 test_that("no CRAN db -> no snapshot", {

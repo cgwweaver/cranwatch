@@ -6,13 +6,29 @@ msg <- function(..., .envir = parent.frame()) {
 
 base_pkgs <- function() rownames(installed.packages(priority = "base"))
 
-# Every HTTP call goes through here: polite UA, retries on 429/5xx, timeout
+# Every HTTP call goes through here: identifying UA, max N requests/sec per
+# host, retries with backoff on 429/503, timeout
 req_cranwatch <- function(url, ...) {
   request(url) |>
     req_url_path_append(...) |>
     req_user_agent(settings$user_agent) |>
+    req_throttle(rate = settings$max_req_per_sec) |>
     req_retry(max_tries = 3) |>
-    req_timeout(120)
+    req_timeout(300)
+}
+
+# GET with a disk cache: within cache_hours the saved body is reused and the
+# server isn't contacted at all. Returns the path of the cached file.
+# (CI keeps _cache/ between runs with actions/cache, so re-runs are free too.)
+cached_get <- function(url, hours = settings$cache_hours, dir = settings$cache_dir) {
+  path <- file.path(dir, rlang::hash(url))
+  age  <- difftime(Sys.time(), file.mtime(path), units = "hours")
+  if (file.exists(path) && age < hours) return(path)
+
+  dir.create(dir, showWarnings = FALSE)
+  req_cranwatch(url) |> req_perform(path = paste0(path, ".part"))
+  file.rename(paste0(path, ".part"), path)
+  path
 }
 
 # Add columns that an API/db didn't return, so downstream code can rely on them

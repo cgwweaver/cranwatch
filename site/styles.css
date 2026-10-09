@@ -1,3 +1,4 @@
+.has-tip { border-bottom: 1px dotted #6c757d; cursor: help; }
 .muted { color: #6c757d; font-size: 0.85em; }
 .bad { color: #b02a37; font-weight: 600; }
 

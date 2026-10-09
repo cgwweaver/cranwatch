@@ -3,7 +3,7 @@
 # (Depends/Imports/LinkingTo) dependencies, needs one of these. Matching is a
 # case-insensitive whole-word match against DESCRIPTION SystemRequirements
 # and the libraries r-universe detects at link time.
-# Handy for The Zone / JupyterHub images where you can't apt-get.
+# Handy for locked-down k8s / JupyterHub images where you can't apt-get.
 
 compile-only: # only needed to build from source
   - cmake

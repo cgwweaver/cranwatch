@@ -2,14 +2,15 @@
 
 cran_statuses <- c("cran", "cran-archived")
 
-# First pass, before GitHub: whatever CRAN / r-universe could tell us
+# First pass, before GitHub: where can you install it from today?
+# (archived from CRAN but alive on r-universe, e.g. polars -> "r-universe")
 assign_status <- function(snap) {
   snap |>
     mutate(status = case_when(
       package %in% base_pkgs() ~ "base",
       on_cran %in% TRUE        ~ "cran",
-      cran_archived %in% TRUE  ~ "cran-archived",
-      !is.na(ru_universe)      ~ "r-universe"
+      !is.na(ru_universe)      ~ "r-universe",
+      cran_archived %in% TRUE  ~ "cran-archived"
     ))
 }
 
@@ -43,7 +44,7 @@ add_flags <- function(snap, today) {
 
   hits <- with(snap, tibble(
     deadline           = !is.na(deadline),
-    archived           = status %in% "cran-archived",
+    archived           = status != "cran" & yes(archived_n > 0), # off CRAN, was on it
     orphaned           = yes(orphaned),
     `archived-past-yr` = status %in% "cran" & yes(archived_last >= today - 365),
     `new-past-yr`      = status %in% "cran" & yes(dl_prev365 == 0 & dl_365 > 0),

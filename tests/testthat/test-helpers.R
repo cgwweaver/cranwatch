@@ -43,3 +43,15 @@ test_that("snapshots round-trip and old ones gain new columns", {
   expect_equal(back$ru_score, 1.5)
   expect_s3_class(back$deadline, "Date")
 })
+
+test_that("cached_get reuses a fresh file without touching the network", {
+  dir  <- tempfile("cache-")
+  url  <- "https://example.invalid/data.json"
+  path <- file.path(dir, rlang::hash(url))
+  dir.create(dir)
+  writeLines("{}", path)
+
+  expect_equal(cached_get(url, dir = dir), path) # fresh: no request (example.invalid would fail)
+  Sys.setFileTime(path, Sys.time() - 48 * 3600)
+  expect_error(cached_get(url, dir = dir))       # stale: tries the network
+})

@@ -53,6 +53,11 @@ flag_badges <- \(value) {
 
 muted <- \(...) div(class = "muted", ...)
 
+# Hover text for the score: what it's made of (see "Columns & sources")
+score_parts <- ru_score_parts(snap, "ru_") |>
+  pmap_chr(\(...) { p <- round(c(...), 1); paste0("= 1 + ", paste(p[p > 0], names(p)[p > 0], collapse = " + ")) })
+score_tip <- if_else(is.na(snap$ru_update_weeks), "", score_parts)
+
 reactable(
   tbl,
   searchable = TRUE, filterable = TRUE, highlight = TRUE, striped = TRUE, compact = TRUE,
@@ -74,7 +79,9 @@ reactable(
       }),
       themes  = colDef(name = "Themes", minWidth = 120),
       status  = colDef(name = "Status", minWidth = 100, cell = \(value) span(class = paste0("status status-", value), value)),
-      ru_score      = colDef(name = "Score", format = colFormat(digits = 1)),
+      ru_score      = colDef(name = "Score", cell = \(value, i) {
+        if (is.na(value)) "" else span(title = score_tip[i], class = if (nzchar(score_tip[i])) "has-tip", format(round(value, 1), nsmall = 1))
+      }),
       dl_365        = colDef(name = "DLs/yr", cell = short),
       dl_growth     = colDef(name = "vs prev", format = colFormat(percent = TRUE, digits = 0)),
       ru_stars      = colDef(name = "Stars", cell = short),

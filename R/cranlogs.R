@@ -20,9 +20,9 @@ cranlogs_totals <- function(pkgs, from, to) {
   pkgs |>
     split(ceiling(seq_along(pkgs) / settings$dl_chunk)) |>
     map(\(chunk) {
-      req_cranwatch(settings$cranlogs_base, "downloads/total", paste0(from, ":", to), paste(chunk, collapse = ",")) |>
-        req_perform() |>
-        resp_body_json(simplifyVector = TRUE) |>
+      glue("{settings$cranlogs_base}/downloads/total/{from}:{to}/{paste(chunk, collapse = ',')}") |>
+        cached_get() |>
+        fromJSON() |>
         as_tibble()
     }) |>
     list_rbind() |>

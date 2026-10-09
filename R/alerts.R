@@ -1,12 +1,14 @@
 # Alerts: flags worth a GitHub issue + what's new since the previous snapshot --
 
 # One row per (package, alert). `when` makes a moved deadline / re-archival count as new.
+# Archivals older than a year are known history: shown on the site, but they
+# don't hold the issue open.
 alerts_of <- function(snap) {
   if (is.null(snap)) return(tibble(package = character(), type = character(), when = character(), detail = character()))
 
   snap |>
     separate_longer_delim(flags, "; ") |>
-    filter(flags %in% settings$alert_types) |>
+    filter(flags %in% settings$alert_types, !(flags == "archived" & coalesce(archived_last < run_date - 365, FALSE))) |>
     transmute(
       package,
       type   = flags,

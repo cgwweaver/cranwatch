@@ -5,13 +5,13 @@ cran_fields <- c(
   "URL", "BugReports", "Maintainer", "X-CRAN-Comment", "X-CRAN-History", "Depends", "Imports", "LinkingTo"
 )
 
-# All current CRAN packages, every DESCRIPTION field + CRAN's own (Deadline, X-CRAN-*)
+# All current CRAN packages, every DESCRIPTION field + CRAN's own (Deadline, X-CRAN-*).
+# Same file tools::CRAN_package_db() reads, fetched ourselves so it gets our UA
+# + cache (and doesn't depend on options(repos), which may point at PPM/Artifactory)
 fetch_cran_db <- function() {
-  # CRAN_package_db() reads from options(repos) unless R_CRAN_WEB is set, and
-  # mirrors like Posit Package Manager / Artifactory don't serve web/packages/
-  if (!nzchar(Sys.getenv("R_CRAN_WEB"))) Sys.setenv(R_CRAN_WEB = settings$cran_base)
-
-  tools::CRAN_package_db() |>
+  paste0(settings$cran_base, "/web/packages/packages.rds") |>
+    cached_get() |>
+    readRDS() |>
     as_tibble(.name_repair = "unique_quiet") |> # the db has a duplicated MD5sum column
     distinct(Package, .keep_all = TRUE) |>
     add_na_cols(cran_fields)
@@ -19,10 +19,9 @@ fetch_cran_db <- function() {
 
 # CRAN's master list incl. archived packages: "Archived on <date> as ..." notes
 fetch_cran_packages_in <- function() {
-  tmp <- tempfile()
-  req_cranwatch(settings$cran_base, "src/contrib/PACKAGES.in") |> req_perform(path = tmp)
-
-  read.dcf(tmp, fields = c("Package", "X-CRAN-Comment", "X-CRAN-History")) |>
+  paste0(settings$cran_base, "/src/contrib/PACKAGES.in") |>
+    cached_get() |>
+    read.dcf(fields = c("Package", "X-CRAN-Comment", "X-CRAN-History")) |>
     as_tibble() |>
     transmute(package = Package, comment = `X-CRAN-Comment`, history = `X-CRAN-History`) |>
     mutate(across(everything(), \(x) iconv(x, "UTF-8", "UTF-8", sub = ""))) |> # drop stray non-UTF-8 bytes

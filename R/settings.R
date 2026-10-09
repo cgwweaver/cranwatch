@@ -1,11 +1,20 @@
 # Knobs -----------------------------------------------------------------------
 
 settings <- list(
-  user_agent        = "cranwatch (https://github.com/cgwweaver/cranwatch)",
+  # Who we are, on every request (r-universe docs + GitHub API ask for a UA)
+  user_agent        = "cranwatch/0.1 (+https://github.com/cgwweaver/cranwatch)",
   site_url          = "https://cgwweaver.github.io/cranwatch/",
-  ru_base           = "https://cran.r-universe.dev", # any universe works for /api/scores (it's global)
+  # Politeness: every GET is cached on disk and reused for this long, and
+  # requests to one host are spaced out
+  cache_dir         = "_cache",
+  cache_hours       = 20,
+  max_req_per_sec   = 2,
+  # Sources
+  cran_base         = "https://cloud.r-project.org", # CRAN's CDN mirror, spares the Vienna master
+  ru_global         = "https://r-universe.dev",      # global search: every indexed package
+  ru_universe       = "https://{universe}.r-universe.dev",
+  ru_page_size      = 5000, # bigger pages hit MongoDB's 16 MB document cap server-side
   cranlogs_base     = "https://cranlogs.r-pkg.org",
-  cran_base         = "https://cran.r-project.org",
   github_api        = "https://api.github.com",
   dl_lag_days       = 2,  # cranlogs lags ~1 day; 2 is safe
   dl_chunk          = 50, # packages per cranlogs request

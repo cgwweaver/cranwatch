@@ -5,7 +5,8 @@ default_fetchers <- function() {
   list(
     cran_db    = fetch_cran_db,
     cran_in    = fetch_cran_packages_in,
-    ru_scores  = fetch_ru_scores,
+    ru_index   = fetch_ru_index,
+    ru_detail  = fetch_ru_detail,
     ru_sysdeps = fetch_ru_sysdeps,
     downloads  = fetch_downloads,
     github     = fetch_github
@@ -34,15 +35,17 @@ main <- function(root = ".", today = Sys.Date(), fetch = default_fetchers(), wri
 
   cran_db <- src("cran_db") %||% stop("CRAN package db unavailable; not writing a snapshot", call. = FALSE)
   cran_in <- src("cran_in")
-  scores  <- src("ru_scores")
+  index   <- src("ru_index")
+  detail  <- if (!is.null(index)) src("ru_detail", ru_pick(index, watch))
+  if (!is.null(detail)) sources$ru_detail$formula_match <- ru_formula_match(detail)
   sysdeps <- src("ru_sysdeps")
 
   snap <- list(
     watch,
     cran_metrics(cran_db, cran_in, watch$package),
-    ru_metrics(scores, watch),
+    ru_metrics(index, detail, watch),
     install_metrics(cran_db, sysdeps, watch$package, sys_watch),
-    revdep_metrics(cran_db, scores, watch$package)
+    revdep_metrics(cran_db, index, watch$package)
   ) |>
     reduce(left_join, by = "package") |>
     assign_status()
@@ -53,7 +56,7 @@ main <- function(root = ".", today = Sys.Date(), fetch = default_fetchers(), wri
   snap <- snap |>
     left_join(dl %||% tibble(package = character()), by = "package") |>
     left_join(gh %||% tibble(repo = character()), by = "repo") |>
-    finalize(today, lookups_ok = sources[c("cran_in", "ru_scores", "github")] |> map_lgl("ok") |> all())
+    finalize(today, lookups_ok = sources[c("cran_in", "ru_index", "github")] |> map_lgl("ok") |> all())
 
   msg("status: {snap |> count(status) |> glue_data('{status} {n}') |> paste(collapse = ', ')}")
   if (write) write_outputs(snap, root, today, sources) else invisible(snap)

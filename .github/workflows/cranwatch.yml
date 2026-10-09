@@ -57,6 +57,14 @@ jobs:
         with:
           needs: site
 
+      # HTTP cache (see cached_get()): a re-run within cache_hours, e.g. on a
+      # push or this PR's dry run, re-reads files instead of re-hitting the APIs
+      - uses: actions/cache@v4
+        with:
+          path: _cache
+          key: cranwatch-http-${{ github.run_id }}
+          restore-keys: cranwatch-http-
+
       - name: Unit tests (offline, fake sources)
         run: Rscript -e 'testthat::test_dir("tests/testthat", stop_on_failure = TRUE)'
 

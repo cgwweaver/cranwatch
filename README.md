@@ -20,9 +20,10 @@ Per package in [`packages.yml`](packages.yml):
 ```
 Monday 06:17 UTC (or push / manual run)
   └─ Rscript run.R
-       ├─ CRAN package db + PACKAGES.in   (1 file each)
-       ├─ r-universe /api/scores + /stats/sysdeps   (1 request each, all packages)
-       ├─ cranlogs totals   (~2 requests per 50 packages)
+       ├─ CRAN packages.rds + PACKAGES.in from the cloud CDN   (1 file each)
+       ├─ r-universe /api/search pages (every package's score) + per-universe
+       │  /api/packages?fields=... (score ingredients) + /api/sysdeps   (~30 requests)
+       ├─ cranlogs totals   (2 requests per 50 packages)
        ├─ GitHub API   (only repos not found elsewhere)
        └─ data/snapshots/<date>.csv, data/latest.csv, data/run.json, _alerts/*.md
   ├─ commit data/
@@ -30,6 +31,7 @@ Monday 06:17 UTC (or push / manual run)
   └─ quarto render site → GitHub Pages
 ```
 
+- **Polite by design**: bulk endpoints (~40 requests/week), every response cached on disk for 20 h and kept between CI runs, a `cranwatch/0.1 (+repo URL)` User-Agent, ≤ 2 requests/s per host, backoff on 429/503.
 - A source that's down leaves its columns `NA` and is logged in `data/run.json`. Only the CRAN db is required.
 - Pull requests do a dry run: tests, a real fetch and a site render, uploaded as an artifact. No commit, issue or deploy.
 
