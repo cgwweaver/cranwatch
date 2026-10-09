@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Keep one open "cranwatch alerts" issue in sync with _alerts/*.md (written by run.R):
+# Keep one open "cranwatch alerts" issue in sync with _alerts/ (written by run.R):
 #   alerts, no open issue  -> open one (the @mention emails you)
 #   alerts, open issue     -> refresh the body; comment only with what's new
 #   no alerts, open issue  -> close it
+# If a lookup source failed (_alerts/degraded), alerts may be incomplete: then
+# the body is refreshed (it says so) but nothing is announced or closed.
 set -euo pipefail
 
 label="cranwatch-alert"
@@ -18,6 +20,6 @@ if [[ -s _alerts/active.md ]]; then
       gh issue comment "$issue" --body-file _alerts/new.md
     fi
   fi
-elif [[ -n "$issue" ]]; then
+elif [[ -n "$issue" && ! -e _alerts/degraded ]]; then
   gh issue close "$issue" --comment "All clear: nothing flagged in the $(date -u +%F) run."
 fi

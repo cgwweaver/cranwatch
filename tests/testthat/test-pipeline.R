@@ -81,3 +81,38 @@ test_that("no CRAN db -> no snapshot", {
   expect_error(main(root, test_today, fake_fetchers(cran_db = \() stop("CRAN down"))), "not writing")
   expect_false(dir.exists(file.path(root, "data")))
 })
+
+test_that("a same-day re-run doesn't re-announce", {
+  root <- fake_root()
+  main(root, test_today, fake_fetchers())
+  expect_true(file.exists(file.path(root, "_alerts", "new.md")))
+  main(root, test_today, fake_fetchers())
+  expect_false(file.exists(file.path(root, "_alerts", "new.md")))
+  expect_true(file.exists(file.path(root, "_alerts", "active.md")))
+})
+
+test_that("an outage doesn't announce, close, or re-announce afterwards", {
+  root <- fake_root()
+  main(root, test_today - 14, fake_fetchers())                                     # complete
+  main(root, test_today - 7, fake_fetchers(ru_index = \() stop("r-universe down"))) # outage
+  expect_true(file.exists(file.path(root, "_alerts", "degraded")))
+  expect_false(file.exists(file.path(root, "_alerts", "new.md")))
+  expect_match(paste(readLines(file.path(root, "_alerts", "active.md")), collapse = "\n"), "Partial data: ru_index")
+
+  main(root, test_today, fake_fetchers())                                           # recovered
+  expect_false(file.exists(file.path(root, "_alerts", "degraded")))
+  expect_false(file.exists(file.path(root, "_alerts", "new.md"))) # hotel's not-found was known before the outage
+})
+
+test_that("a GitHub error makes unresolved packages unknown, not not-found", {
+  root <- fake_root()
+  main(root, test_today, fake_fetchers(github = \(repos) stop("GitHub API 403 for own/golf")))
+  snap <- read_snapshot(file.path(root, "data", "latest.csv"))
+  expect_equal(snap$status[snap$package %in% c("golf", "hotel")], c("unknown", "unknown"))
+})
+
+test_that("run.json records request counts", {
+  root <- fake_root()
+  main(root, test_today, fake_fetchers())
+  expect_true(all(c("sent", "from_cache") %in% names(fromJSON(file.path(root, "data", "run.json"))$requests)))
+})

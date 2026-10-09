@@ -6,7 +6,8 @@
 #   - owner/repo                              # GitHub-hosted; package name = repo name
 #   - {pkg: polars, repo: pola-rs/r-polars}   # package name differs from repo name
 #
-# Lookup order: base R -> CRAN -> CRAN archive -> r-universe -> GitHub repo -> "not-found".
+# Lookup order: base R -> CRAN -> r-universe -> CRAN archive -> GitHub repo -> "not-found"
+# ("unknown" if a lookup API was down). CRAN deadlines are tracked automatically.
 # "# ?" = couldn't confirm it exists; the first run will tell (status / not-found).
 # Non-packages (CLIs, books, course repos) and unidentified names live in links.yml.
 
@@ -61,7 +62,7 @@ pipelines:
   - targets
   - tarchetypes
   - sqltargets
-  - igraph # dep for targets. (same maintainer as duckdb) CRAN deadline...
+  - igraph # dep for targets. (same maintainer as duckdb)
   - crew
 
 parallel:
@@ -85,7 +86,7 @@ dplyr backends:
 big data:
   - data.table
   - {pkg: polars, repo: pola-rs/r-polars} # not on CRAN (r-universe / R-multiverse)
-  - duckdb # CRAN deadline...
+  - duckdb
   - arrow
   - tidytable # was "tidytables"
 
@@ -109,11 +110,11 @@ surveys:
   - Hmisc
   - surveydata
   - questionr
-  - sae # cran deadline...
+  - sae
 
 epi:
   - epiR
-  - epitools # CRAN deadline...
+  - epitools
 
 tables: # https://github.com/sfirke/packagemetrics/blob/master/README_files/figure-markdown_github/unnamed-chunk-3-1.png
   - gt
@@ -126,7 +127,7 @@ tables: # https://github.com/sfirke/packagemetrics/blob/master/README_files/figu
   - sjPlot
   - tidytab # ? not on CRAN
   - janitor # tabyl()
-  - arsenal # cran deadline...
+  - arsenal
 
 plots:
   - ggpubr # ggarrange()
@@ -148,7 +149,7 @@ tidymodels:
   - tidymodels
   - rsample
   - recipes
-  - parsnip # CRAN deadline...
+  - parsnip
   - yardstick
   - workflows
   - tune
@@ -156,7 +157,7 @@ tidymodels:
   - infer
   - broom
   - modeldb # on CRAN + GH
-  - tidypredict # on CRAN + GH. cran deadline...
+  - tidypredict # on CRAN + GH.
   - lorax # on CRAN + GH
 
 xlsx:
@@ -200,7 +201,7 @@ llms:
 
 other:
   - config # posit
-  - configr # cran deadline...
+  - configr
   - datadiff # CRAN one is ThinkR-open/datadiff (YAML rules), not Hadley's
   - janitor
   - glue # tidyverse!
@@ -214,7 +215,7 @@ other:
   - getPass
   - oskey # ? not on CRAN
   - gert
-  - lambda.r # cran deadline...
+  - lambda.r
   - yaml
   - jsonlite
   - prettydoc

@@ -9,6 +9,7 @@ toc: true
 for (f in list.files("../R", pattern = "\\.R$", full.names = TRUE)) source(f)
 snap <- read_snapshot("../data/latest.csv")
 on_cran <- snap |> filter(status == "cran")
+repo <- gh_repo # from R/settings.R
 pkgs <- \(df) and_more(md_pkg(df$package, df$link))
 ```
 
@@ -55,7 +56,7 @@ via <- on_cran |>
 if (nrow(via)) cat(glue("For example **{via$package}** declares no system requirements itself, yet its dependencies bring in: {via$sysreqs_via_deps}."), "\n\n")
 ```
 
-`pak::pkg_sysreqs("pkg")` lists the OS packages to ask for. On the Radar, the *Deps* / *Compiled* columns and the `watch-sysreq` flag show the same thing at a glance.
+`pak::pkg_sysreqs("pkg")` lists the OS packages to ask for. On the Radar, the *System reqs* column (own + via deps) and the `watch-sysreq` flag show the same thing at a glance; *Compiles* / *Compiled* show how much has to be built.
 
 ## 3. How much does it drag in?
 
@@ -113,14 +114,15 @@ if (nrow(grow)) cat(glue("Fastest growing here (downloads vs the year before): {
 | **Footprint** | a handful of dependencies | 20–50 | 50+ for a small job |
 | **Community** | many reverse dependencies | a few | none, single maintainer, no tests |
 
-And one rule that beats the checklist: **write down why you chose it**. A one-line comment in the project (or in a watchlist like [this one](https://github.com/cgwweaver/cranwatch/blob/main/packages.yml)) saves the next person the same research.
+And one rule that beats the checklist: **write down why you chose it**. A one-line comment in the project (or in a watchlist like [this one](https://github.com/`r repo`/blob/main/packages.yml)) saves the next person the same research.
 
 ## Track your own list
 
 This site is a GitHub repository plus a weekly GitHub Action:
 
-1. Fork [cgwweaver/cranwatch](https://github.com/cgwweaver/cranwatch).
-2. Edit `packages.yml`.
-3. Turn on Pages (Settings → Pages → GitHub Actions).
+1. Fork [`r repo`](https://github.com/`r repo`).
+2. In the fork: **Actions** tab → enable workflows; **Settings → Pages** → Source: GitHub Actions; **Settings → General → Features** → tick Issues (for the alert issue).
+3. In `site/_quarto.yml`, change `site-url`, `repo-url` and the GitHub link to your fork (the R code picks up the repo name by itself).
+4. Edit `packages.yml` and push. The workflow runs, commits a snapshot and publishes the site.
 
 It's all R, and readable. The code is in `R/`, one file per data source.

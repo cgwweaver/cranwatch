@@ -6,7 +6,7 @@
   - **modelsummary** compares several models side by side, to many output formats.
 - **knitr::kable()** gives quick, plain tables in Quarto or R Markdown. **kableExtra** styles them.
 - **janitor::tabyl()** gives fast frequency tables and crosstabs with percentages (think PROC FREQ), plus `clean_names()` for messy column names.
-- **arsenal** (`tableby()`) does summary tables but currently has a **CRAN deadline**. **sjPlot** does model tables and plots, mostly for social-science models.
+- **arsenal** (`tableby()`) does summary tables but got a **CRAN deadline** in October 2026. **sjPlot** does model tables and plots, mostly for social-science models.
 - Gotcha: **gtable** is *not* a table package. It's the layout engine ggplot2 uses to arrange plot pieces.
 - **rmarkdown** renders documents. For new reports, Quarto is its successor and runs the same R code.
 

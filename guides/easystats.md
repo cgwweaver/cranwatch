@@ -8,6 +8,6 @@
 - **report**: auto-writes a text description of a model. Good for a first draft, but review the wording.
 - **see**: plotting for all of the above.
 
-Design note: each piece is deliberately light (0–6 dependencies). The **easystats** meta-package installs everything, including the ggplot2 stack via see.
+Design note: the core pieces are deliberately light (0–6 dependencies). **see** is the exception: it brings ggplot2, patchwork and the rest of easystats (~26 packages), and `check_model()` needs it to draw its plots. The **easystats** meta-package installs everything.
 
-**Pick:** install the specific pieces you use (usually performance + parameters) rather than the meta-package on a constrained server.
+**Pick:** install the specific pieces you use (usually performance + parameters, plus see if you want `check_model()` plots) rather than the meta-package on a constrained server.

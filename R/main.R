@@ -14,6 +14,7 @@ default_fetchers <- function() {
 }
 
 main <- function(root = ".", today = Sys.Date(), fetch = default_fetchers(), write = TRUE) {
+  http_reset()
   # Each source is optional except the CRAN db: a failure is logged, its columns stay NA
   sources <- list()
   src <- function(name, ...) {
@@ -37,7 +38,11 @@ main <- function(root = ".", today = Sys.Date(), fetch = default_fetchers(), wri
   cran_in <- src("cran_in")
   index   <- src("ru_index")
   detail  <- if (!is.null(index)) src("ru_detail", ru_pick(index, watch))
-  if (!is.null(detail)) sources$ru_detail$formula_match <- ru_formula_match(detail)
+  if (!is.null(detail)) {
+    match <- ru_formula_match(detail)
+    if (is.finite(match)) sources$ru_detail$formula_match <- match
+    if (length(attr(detail, "failed"))) sources$ru_detail$failed_universes <- attr(detail, "failed")
+  }
   sysdeps <- src("ru_sysdeps")
 
   snap <- list(
@@ -53,25 +58,35 @@ main <- function(root = ".", today = Sys.Date(), fetch = default_fetchers(), wri
   dl <- src("downloads", snap |> filter(status %in% cran_statuses) |> pull(package), today)
   gh <- src("github", snap |> filter(is.na(status), !is.na(repo)) |> pull(repo))
 
+  # Sources that decide status: if one failed, unresolved packages are "unknown"
+  # and alerts are incomplete
+  degraded <- c("cran_in", "ru_index", "github") |> keep(\(s) !isTRUE(sources[[s]]$ok))
+
   snap <- snap |>
     left_join(dl %||% tibble(package = character()), by = "package") |>
     left_join(gh %||% tibble(repo = character()), by = "repo") |>
-    finalize(today, lookups_ok = sources[c("cran_in", "ru_index", "github")] |> map_lgl("ok") |> all())
+    finalize(today, lookups_ok = !length(degraded))
 
   msg("status: {snap |> count(status) |> glue_data('{status} {n}') |> paste(collapse = ', ')}")
-  if (write) write_outputs(snap, root, today, sources) else invisible(snap)
+  if (write) write_outputs(snap, root, today, sources, degraded) else invisible(snap)
 }
 
-write_outputs <- function(snap, root, today, sources) {
+write_outputs <- function(snap, root, today, sources, degraded = character()) {
   data_dir <- file.path(root, "data")
   snap_dir <- file.path(data_dir, "snapshots")
   dir.create(snap_dir, recursive = TRUE, showWarnings = FALSE)
 
-  prev_path <- list.files(snap_dir, "^\\d{4}-\\d{2}-\\d{2}\\.csv$", full.names = TRUE) |>
-    keep(\(p) basename(p) < paste0(today, ".csv")) |>
-    sort() |>
-    tail(1)
-  prev_date <- if (length(prev_path)) str_remove(basename(prev_path), "\\.csv$")
+  snaps    <- list.files(snap_dir, "^\\d{4}-\\d{2}-\\d{2}\\.csv$", full.names = TRUE) |> sort()
+  date_of  <- \(p) if (length(p)) str_remove(basename(p), "\\.csv$")
+  # run.json "previous": the last run on an earlier day
+  prev_path <- snaps |> keep(\(p) date_of(p) < as.character(today)) |> tail(1)
+  # Alert baseline, read before today's file is overwritten: the newest snapshot
+  # (today's included, so a same-day re-run doesn't re-announce) whose lookups
+  # were complete (so alerts an outage hid aren't announced again afterwards)
+  base_path <- rev(snaps) |>
+    keep(\(p) date_of(p) <= as.character(today)) |>
+    detect(\(p) !any(read_snapshot(p)$status %in% "unknown"))
+  base <- if (length(base_path)) read_snapshot(base_path)
 
   c(file.path(snap_dir, paste0(today, ".csv")), file.path(data_dir, "latest.csv")) |>
     walk(\(p) write_csv(snap, p, na = ""))
@@ -79,13 +94,14 @@ write_outputs <- function(snap, root, today, sources) {
   list(
     run_date   = today,
     run_time   = format(Sys.time(), tz = "UTC", usetz = TRUE),
-    previous   = prev_date,
+    previous   = date_of(prev_path),
     dl_windows = dl_windows(today),
     n_packages = nrow(snap),
-    sources    = sources
+    sources    = sources,
+    requests   = list(sent = as.list(http_log$sent), from_cache = as.list(http_log$cached))
   ) |>
     write_json(file.path(data_dir, "run.json"), auto_unbox = TRUE, pretty = TRUE)
 
-  write_alerts(snap, if (length(prev_path)) read_snapshot(prev_path), prev_date, file.path(root, "_alerts"))
+  write_alerts(snap, base, date_of(base_path), file.path(root, "_alerts"), degraded)
   invisible(snap)
 }

@@ -12,7 +12,7 @@ library(htmltools)
 snap  <- read_snapshot("../data/latest.csv")
 run   <- read_json("../data/run.json")
 links <- read_yaml("../links.yml")
-repo  <- Sys.getenv("GITHUB_REPOSITORY", "cgwweaver/cranwatch")
+repo  <- gh_repo # from R/settings.R
 
 failed    <- run$sources |> keep(\(s) !isTRUE(s$ok)) |> names()
 sources   <- if (length(failed)) paste("**FAILED:**", paste(failed, collapse = ", ")) else "all ok"
@@ -27,7 +27,7 @@ note      <- \(l) if (is.null(l$note)) "" else paste0(": ", l$note)
 alerts <- alerts_of(snap) |> left_join(snap |> select(package, link), by = "package")
 if (nrow(alerts)) {
   cat("::: {.callout-warning}\n## Alerts\n\n")
-  cat(glue("- **[{alerts$package}]({alerts$link})**: {alerts$detail}"), sep = "\n")
+  cat(glue("- **{md_pkg(alerts$package, alerts$link)}**: {alerts$detail}"), sep = "\n")
   cat("\n:::\n")
 }
 ```
@@ -150,7 +150,7 @@ Not R packages, but related. From [links.yml](https://github.com/`r repo`/blob/m
 
 ```{r}
 #| results: asis
-links$links |> map_chr(\(l) glue("- [{l$name}]({l$url}){note(l)}")) |> cat(sep = "\n")
+links$links |> map_chr(\(l) glue("- {md_pkg(l$name, l$url %||% NA)}{note(l)}")) |> cat(sep = "\n")
 ```
 
 ### Unresolved
@@ -159,5 +159,5 @@ Names from the watchlist I couldn't identify yet:
 
 ```{r}
 #| results: asis
-links$unresolved |> map_chr(\(l) glue("- **{l$name}** ({l$theme}){note(l)}")) |> cat(sep = "\n")
+links$unresolved |> map_chr(\(l) glue("- **{l$name}**{if (is.null(l$theme)) '' else paste0(' (', l$theme, ')')}{note(l)}")) |> cat(sep = "\n")
 ```

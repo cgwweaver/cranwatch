@@ -7,7 +7,7 @@
 - **srvyr** puts dplyr syntax on top of survey (`as_survey_design()`, then `group_by()` / `summarise(survey_mean(x))`). Same engine, friendlier for tidyverse users.
 - **sampling** draws samples (stratified, PPS, balanced/cube) and also calibrates (`calib()`).
 - **anesrake** does raking, but its last release was 2018 and it pulls in 100+ packages. `survey::rake()` / `calibrate()` cover the same ground.
-- **sae** does small area estimation. It currently has a **CRAN deadline**; **emdi** is an actively maintained alternative to evaluate.
+- **sae** does small area estimation. It got a **CRAN deadline** in October 2026; **emdi** is an actively maintained alternative to evaluate.
 - **Hmisc** has handy weighted helpers (`wtd.mean`, `wtd.quantile`) but is heavy. **questionr** and **surveydata** are convenience layers for questionnaire data.
 
 **Pick:** survey (+ srvyr) for estimation and variance, sampling for selection, survey's calibration for weighting. That pair replaces most PROC SURVEYMEANS / SURVEYFREQ / SURVEYREG work.

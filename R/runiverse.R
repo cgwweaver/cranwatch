@@ -1,14 +1,18 @@
 # r-universe: scores, score components, detected system libraries -------------
-# Bulk requests, not one per package (all cached, see cached_get()):
-#   1. ru_index:   global /api/search with no query = every indexed package,
-#                  ranked by score, ~5 pages. Gives score, recursive dependents,
-#                  scripts, stars + which universe is each package's home.
+# Mostly bulk requests, not one per package (all cached, see cached_get()):
+#   1. ru_index:   /api/search with no query = every package, ranked by score,
+#                  in pages of 5000: the global index (~7 pages) plus the cran
+#                  universe's (~6 pages) for CRAN packages global search leaves
+#                  out (e.g. future, gridExtra). Gives score, recursive
+#                  dependents, scripts, stars + each package's home universe.
 #                  Used for revdep ranking and to find watched packages.
 #   2. ru_detail:  /api/packages?fields=... once per universe that hosts a
-#                  watched package (~20). Gives the score's ingredients.
+#                  watched package (~55), + one call per watched package that
+#                  listing doesn't return (~10). Gives the score's ingredients.
 #   3. ru_sysdeps: /api/sysdeps on the cran universe: system library -> packages.
 # NB a CRAN package's copy in the `cran` universe isn't its canonical record when
-# it has a home universe (e.g. dplyr -> tidyverse: 5 vs 5000 stars), hence 1 -> 2.
+# it has a home universe (e.g. dplyr -> tidyverse: 5 vs 5000 stars), hence the
+# global index first.
 
 ru_url <- function(universe, path) paste0(glue(settings$ru_universe, universe = universe), path)
 
@@ -18,8 +22,14 @@ ru_index_cols <- c(
 )
 
 fetch_ru_index <- function() {
+  global <- ru_search_all(settings$ru_global)
+  cran   <- ru_search_all(ru_url("cran", "")) |> anti_join(global, by = "package")
+  bind_rows(global, cran)
+}
+
+ru_search_all <- function(base) {
   size  <- settings$ru_page_size
-  page  <- \(skip) glue("{settings$ru_global}/api/search?limit={size}&skip={skip}") |> cached_get() |> fromJSON()
+  page  <- \(skip) glue("{base}/api/search?limit={size}&skip={skip}") |> cached_get() |> fromJSON()
   first <- page(0)
   skips <- if (first$total > size) seq(size, first$total - 1, by = size) else numeric()
 
@@ -47,21 +57,50 @@ ru_detail_fields <- c(
   "_updates", "_contributors.user", "_vignettes.title", "_datasets.name", "_releases.version"
 )
 
+# A universe that fails is skipped (and listed in attr "failed"), not fatal
 fetch_ru_detail <- function(picked) {
-  picked |>
+  none   <- tibble(package = character(), universe = character())
+  failed <- character()
+  try_u  <- \(u, f) tryCatch(f(), error = \(e) {
+    failed <<- union(failed, u)
+    msg("ru_detail: {u} failed - {conditionMessage(e)}")
+    NULL
+  })
+
+  listed <- picked |>
     distinct(universe) |>
     pull() |>
-    map(\(u) {
-      ru_url(u, "/api/packages") |>
-        paste0("?stream=true&limit=10000&fields=", paste(ru_detail_fields, collapse = ",")) |>
+    map(\(u) try_u(u, \() ru_universe_detail(u, picked))) |>
+    list_rbind() %||% none
+
+  # The cran universe only lists its indexed packages: fetch the rest one by one
+  single <- picked |>
+    anti_join(listed, by = c("package", "universe")) |>
+    filter(!universe %in% failed) |>
+    select(package, universe) |>
+    pmap(\(package, universe) try_u(universe, \() {
+      ru_url(universe, paste0("/api/packages/", package)) |>
         cached_get() |>
-        readLines(warn = FALSE, encoding = "UTF-8") |>
-        keep(\(line) str_extract(line, '^\\{"Package":"([^"]+)"', group = 1) %in% picked$package) |> # parse only ours
-        map(\(line) ru_components(fromJSON(line, simplifyVector = FALSE))) |>
-        list_rbind() |>
-        semi_join(picked, by = c("package", "universe"))
-    }) |>
+        fromJSON(simplifyVector = FALSE) |>
+        ru_components()
+    })) |>
+    list_rbind() %||% none
+
+  out <- bind_rows(listed, single)
+  attr(out, "failed") <- failed
+  out
+}
+
+ru_universe_detail <- function(universe, picked) {
+  rows <- ru_url(universe, "/api/packages") |>
+    paste0("?stream=true&limit=10000&fields=", paste(ru_detail_fields, collapse = ",")) |>
+    cached_get() |>
+    readLines(warn = FALSE, encoding = "UTF-8") |>
+    keep(\(line) str_extract(line, '^\\{"Package":"([^"]+)"', group = 1) %in% picked$package) |> # parse only ours
+    map(\(line) ru_components(fromJSON(line, simplifyVector = FALSE))) |>
     list_rbind()
+
+  (rows %||% tibble(package = character(), universe = character())) |> semi_join(picked, by = c("package", "universe"))
 }
 
 # One package record -> the numbers r-universe's score is built from

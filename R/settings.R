@@ -1,11 +1,14 @@
 # Knobs -----------------------------------------------------------------------
 
+# owner/name of this repo (set by GitHub Actions), so forks identify as themselves
+gh_repo <- Sys.getenv("GITHUB_REPOSITORY", "cgwweaver/cranwatch")
+
 settings <- list(
   # Who we are, on every request (r-universe docs + GitHub API ask for a UA)
-  user_agent        = "cranwatch/0.1 (+https://github.com/cgwweaver/cranwatch)",
-  site_url          = "https://cgwweaver.github.io/cranwatch/",
+  user_agent        = paste0("cranwatch/0.1 (+https://github.com/", gh_repo, ")"),
+  site_url          = paste0("https://", dirname(gh_repo), ".github.io/", basename(gh_repo), "/"),
   # Politeness: every GET is cached on disk and reused for this long, and
-  # requests to one host are spaced out
+  # requests to one host are spaced at least 1 / max_req_per_sec seconds apart
   cache_dir         = "_cache",
   cache_hours       = 20,
   max_req_per_sec   = 2,
@@ -22,6 +25,8 @@ settings <- list(
   revdep_min_n      = 3,  # ...and only list the top ones if at least this many
   revdep_top_n      = 3,
   strong_deps       = c("Depends", "Imports", "LinkingTo"),
-  sysreq_noise      = "(?i)^(gnu make|c\\+\\+\\s*\\d*)$", # SystemRequirements items not worth showing
+  # SystemRequirements fragments not worth showing: compilers/make, distro
+  # package aliases ("libxml2-devel"), prose ("or ...", "see the README")
+  sysreq_noise      = "(?i)^(gnu make|c\\+\\+\\s*\\d*)$|^(or|see|for|and|on)\\b|-(dev|devel)$",
   alert_types       = c("deadline", "archived", "orphaned", "not-found", "gh-archived")
 )

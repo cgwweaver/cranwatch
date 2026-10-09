@@ -30,6 +30,7 @@ fetch_cran_packages_in <- function() {
 
 # Release info, deadline, archive history -> one row per watched package known to CRAN
 cran_metrics <- function(db, cran_in, pkgs) {
+  have_in <- !is.null(cran_in) # without PACKAGES.in archive history is unknown (NA), not 0
   cran_in <- cran_in %||% tibble(package = character(), comment = character(), history = character())
   current <- db |> filter(Package %in% pkgs)
 
@@ -61,7 +62,9 @@ cran_metrics <- function(db, cran_in, pkgs) {
     full_join(archive, by = "package") |>
     mutate(
       on_cran       = on_cran %in% TRUE,
-      cran_archived = !on_cran & package %in% cran_in$package
+      cran_archived = !on_cran & package %in% cran_in$package,
+      archived_n    = if (have_in) archived_n else NA_real_,
+      archived_last = if (have_in) archived_last else as.Date(NA)
     )
 }
 
@@ -96,14 +99,23 @@ install_metrics <- function(db, sysdeps, pkgs, sys_watch) {
     inner_join(sysdeps, by = c(dep = "package"), relationship = "many-to-many") |>
     summarise(sysdeps_detected = paste(sort(unique(library)), collapse = "; "), .by = package)
 
+  # sys-deps.yml hits among deps, matched on their full requirement text (the
+  # via-deps labels are shortened)
+  dep_hits <- dep_long |>
+    inner_join(reqs |> transmute(dep = package, hit = watch_hits(item, sys_watch)) |> filter(!is.na(hit)),
+               by = "dep", relationship = "many-to-many") |>
+    summarise(dep_hits = paste(unique(hit), collapse = "; "), .by = package)
+
   list(
     deps |> transmute(package, deps_n = lengths(dep), deps_compiled_n = map_dbl(dep, \(d) sum(d %in% compiled))),
     own,
     via,
-    detected
+    detected,
+    dep_hits
   ) |>
     reduce(left_join, by = "package") |>
-    mutate(sysreqs_watch = watch_hits(paste(sysreqs, str_remove_all(sysreqs_via_deps, "\\[[^\\]]*\\]"), sysdeps_detected), sys_watch))
+    mutate(sysreqs_watch = watch_hits(paste(sysreqs, dep_hits, sysdeps_detected), sys_watch)) |>
+    select(-dep_hits)
 }
 
 # SystemRequirements of every CRAN package, one row per item
@@ -146,7 +158,8 @@ revdep_metrics <- function(db, scores, pkgs) {
       revdeps_notable_n = sum(score > settings$revdep_min_score, na.rm = TRUE),
       revdeps_top       = top_revdeps(dep, score),
       .by = package
-    )
+    ) |>
+    mutate(revdeps_notable_n = if (is.null(scores)) NA_real_ else revdeps_notable_n) # no scores: unknown, not 0
 }
 
 # "targets (21.3), crew (15.2), ..." if >= revdep_min_n revdeps score > revdep_min_score

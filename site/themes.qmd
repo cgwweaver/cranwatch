@@ -11,7 +11,7 @@ for (f in list.files("../R", pattern = "\\.R$", full.names = TRUE)) source(f)
 snap  <- read_snapshot("../data/latest.csv")
 watch <- read_watchlist("../packages.yml")
 notes <- read_watch_notes("../packages.yml")
-repo  <- Sys.getenv("GITHUB_REPOSITORY", "cgwweaver/cranwatch")
+repo  <- gh_repo # from R/settings.R
 ```
 
 Short guides for colleagues, one per theme in [`packages.yml`](https://github.com/`r repo`/blob/main/packages.yml). Each table is live from the latest run (`r snap$run_date[1]`), and notes come from the comments in packages.yml. Click a package for its CRAN or r-universe page. All columns are on the [Radar](index.html), and [How to judge a package](judge.html) explains how to read them.

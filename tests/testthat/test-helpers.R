@@ -77,3 +77,27 @@ test_that("YAML comments become per-entry and per-theme notes", {
 test_that("fmt_short rounds each value on its own", {
   expect_equal(fmt_short(c(4890, 209, 39438, 1234567, 12, NA)), c("4.9K", "210", "39K", "1.2M", "12", ""))
 })
+
+test_that("GitHub: 404 = missing repo, any other error stops the source", {
+  fake <- \(codes) \(...) response(status_code = codes[[paste(c(...), collapse = "/")]] %||% 200,
+                                   headers = list(`Content-Type` = "application/json"), body = charToRaw("{}"))
+  expect_equal(gh_repo_info("o/r", fake(list(`repos/o/r` = 404))), tibble(repo = "o/r"))
+  expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 403))), "GitHub API 403")
+  expect_true(is.na(gh_repo_info("o/r", fake(list(`repos/o/r/contents/DESCRIPTION` = 502)))$gh_is_pkg))
+  expect_false(gh_repo_info("o/r", fake(list(`repos/o/r/contents/DESCRIPTION` = 404)))$gh_is_pkg)
+})
+
+test_that("archive dates: impossible dates are NA, 'Archived again' counts", {
+  out <- archive_dates(c("Archived on 2020-02-30\nUnarchived on 2020-03-12.", "Archived again on 2021-05-01. Archived on 2019-01-02"))
+  expect_equal(out[[1]], as.Date(NA))
+  expect_equal(out[[2]], as.Date(c("2021-05-01", "2019-01-02")))
+})
+
+test_that("requests to one host are spaced out", {
+  http_reset()
+  t0 <- Sys.time()
+  for (i in 1:3) try(perform_polite(request("https://example.invalid/x") |> req_timeout(1)), silent = TRUE)
+  expect_gte(as.numeric(Sys.time() - t0, units = "secs"), 2 / settings$max_req_per_sec - 0.05)
+  expect_equal(http_log$sent[["example.invalid"]], 3)
+  http_reset()
+})
