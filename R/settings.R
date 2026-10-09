@@ -26,7 +26,7 @@ settings <- list(
   revdep_top_n      = 3,
   strong_deps       = c("Depends", "Imports", "LinkingTo"),
   # SystemRequirements items not worth *showing* (watch flags still see them):
-  # compilers/make, and split-off continuations ("or ...", "see the README")
-  sysreq_noise      = "(?i)^(gnu make|c\\+\\+\\s*\\d*)$|^(or|see)\\b",
+  # compilers/make, and split-off continuations ("or ...", "see the README", "and ...")
+  sysreq_noise      = "(?i)^(gnu make|c\\+\\+\\s*\\d*)$|^(or|see|for|and)\\b",
   alert_types       = c("deadline", "archived", "orphaned", "not-found", "gh-archived")
 )

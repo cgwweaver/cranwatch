@@ -35,7 +35,11 @@ One row per package in [`packages.yml`](https://github.com/`r repo`/blob/main/pa
 
 ## Alerts
 
-When a package gets a CRAN **deadline**, is **archived** (in the past year) or **orphaned**, can't be **found**, or its GitHub repo is **archived**, the workflow keeps a single issue labelled `cranwatch-alert` up to date and @mentions the repo owner (= an email). It only comments when something is *new* since the previous snapshot, and closes the issue when nothing is flagged.
+When a package gets a CRAN **deadline**, is **archived** (in the past year) or **orphaned**, can't be **found**, or its GitHub repo is **archived**, the workflow keeps a single issue labelled `cranwatch-alert` up to date and closes it when nothing is flagged.
+
+- **New alerts** get a comment that @mentions the repo owner (= an email).
+- **Each alert is announced once.** [`data/alerts.csv`](https://github.com/`r repo`/blob/main/data/alerts.csv) remembers what was announced. A complete run forgets alerts that are no longer flagged, so they're announced again if they come back.
+- **If a data source fails**, the run is *partial*. Only alerts that come from CRAN's own data (deadline, orphaned, archived) are announced; the others wait for the next complete run, and the issue isn't closed.
 
 ## The r-universe score
 

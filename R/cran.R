@@ -150,7 +150,7 @@ watch_hits <- function(text, libs) {
 }
 
 # Direct strong revdeps on CRAN, plus the top ones by r-universe score
-revdep_metrics <- function(db, scores, pkgs) {
+revdep_metrics <- function(db, scores, pkgs, complete = TRUE) {
   best <- (scores %||% tibble(package = character(), score = double())) |>
     summarise(score = max_or_na(score), .by = package)
 
@@ -164,7 +164,7 @@ revdep_metrics <- function(db, scores, pkgs) {
       revdeps_top       = top_revdeps(dep, score),
       .by = package
     ) |>
-    mutate(revdeps_notable_n = if (is.null(scores)) NA_real_ else revdeps_notable_n) # no scores: unknown, not 0
+    mutate(revdeps_notable_n = if (is.null(scores) || !complete) NA_real_ else revdeps_notable_n) # missing scores: unknown, not 0
 }
 
 # "targets (21.3), crew (15.2), ..." if >= revdep_min_n revdeps score > revdep_min_score

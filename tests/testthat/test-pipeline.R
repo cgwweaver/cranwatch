@@ -138,3 +138,35 @@ test_that("alerts first announced during an outage aren't re-announced when it e
   new <- file.path(root, "_alerts", "new.md")
   expect_equal(if (file.exists(new)) str_subset(readLines(new), "^- ") else character(), "- **hotel**: not found on CRAN, r-universe or GitHub; check packages.yml")
 })
+
+test_that("the ledger survives a same-day partial re-run", {
+  root <- fake_root()
+  main(root, test_today - 7, fake_fetchers())                                          # hotel announced
+  main(root, test_today - 7, fake_fetchers(github = \(repos) stop("GitHub API 502")))  # same day, partial: overwrites the snapshot
+  main(root, test_today, fake_fetchers())
+  expect_false(file.exists(file.path(root, "_alerts", "new.md")))
+  ledger <- read_ledger(file.path(root, "data", "alerts.csv"))
+  expect_true(all(c("hotel", "delta", "echo") %in% ledger$package))
+  expect_true("" %in% ledger$when) # not-found has no date; must round-trip as "", not NA
+})
+
+test_that("partial runs only announce alerts that come from CRAN's own data", {
+  root <- fake_root()
+  arch <- \(repos) tibble(repo = "own/golf", gh_stars = 3, gh_pushed = test_today, gh_archived = TRUE, gh_is_pkg = TRUE) |> filter(repo %in% repos)
+  main(root, test_today - 7, fake_fetchers(ru_index = \() stop("down"), github = arch))
+  new <- readLines(file.path(root, "_alerts", "new.md"))
+  expect_false(any(str_detect(new, "golf|hotel")))  # gh-archived / not-found wait for a complete run
+  expect_true(any(str_detect(new, "delta")))         # CRAN deadline is trusted
+  main(root, test_today, fake_fetchers(github = arch))
+  expect_true(any(str_detect(readLines(file.path(root, "_alerts", "new.md")), "golf")))
+})
+
+test_that("a complete run forgets resolved alerts, so they can come back", {
+  root <- fake_root()
+  main(root, test_today - 14, fake_fetchers())
+  no_deadline <- fake_db |> mutate(Deadline = NA_character_)
+  main(root, test_today - 7, fake_fetchers(cran_db = \() add_na_cols(no_deadline, cran_fields)))
+  expect_false("delta" %in% read_ledger(file.path(root, "data", "alerts.csv"))$package[read_ledger(file.path(root, "data", "alerts.csv"))$type == "deadline"])
+  main(root, test_today, fake_fetchers())
+  expect_true(any(str_detect(readLines(file.path(root, "_alerts", "new.md")), "delta")))
+})

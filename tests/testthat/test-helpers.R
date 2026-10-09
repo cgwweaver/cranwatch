@@ -85,11 +85,11 @@ test_that("GitHub: repo-level errors = not found, GitHub-wide errors stop the so
   )
   expect_equal(gh_repo_info("o/r", fake(list(`repos/o/r` = 404))), tibble(repo = "o/r"))
   expect_equal(gh_repo_info("o/r", fake(list(`repos/o/r` = 451))), tibble(repo = "o/r"))
-  expect_equal(gh_repo_info("o/r", fake(list(`repos/o/r` = 403))), tibble(repo = "o/r"))  # blocked repo
+  blocked <- \(...) response(status_code = 403, body = charToRaw('{"message":"Repository access blocked","block":{"reason":"tos"}}'))
+  expect_equal(gh_repo_info("o/r", blocked), tibble(repo = "o/r"))
   expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 403), remaining = "0")), "GitHub API 403") # rate limit
+  expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 403))), "GitHub API 403")                  # bare 403: GitHub-wide
   expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 502))), "GitHub API 502")
-  secondary <- \(...) response(status_code = 403, headers = list(`retry-after` = "60"), body = charToRaw("{}"))
-  expect_error(gh_repo_info("o/r", secondary), "GitHub API 403") # secondary rate limit
   expect_true(is.na(gh_repo_info("o/r", fake(list(`repos/o/r/contents/DESCRIPTION` = 502)))$gh_is_pkg))
   expect_false(gh_repo_info("o/r", fake(list(`repos/o/r/contents/DESCRIPTION` = 404)))$gh_is_pkg)
 })

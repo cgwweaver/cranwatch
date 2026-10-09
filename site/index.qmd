@@ -15,7 +15,12 @@ links <- read_yaml("../links.yml")
 repo  <- gh_repo # from R/settings.R
 
 failed    <- run$sources |> keep(\(s) !isTRUE(s$ok)) |> names()
-sources   <- if (length(failed)) paste("**FAILED:**", paste(failed, collapse = ", ")) else "all ok"
+partial   <- run$sources |> keep(\(s) isTRUE(s$ok) && (!is.null(s$partial) || length(s$failed))) |> names()
+sources   <- c(
+  if (length(failed)) paste("**FAILED:**", paste(failed, collapse = ", ")),
+  if (length(partial)) paste("partial:", paste(partial, collapse = ", "))
+) |> paste(collapse = "; ")
+if (!nzchar(sources)) sources <- "all ok"
 note      <- \(l) if (is.null(l$note)) "" else paste0(": ", l$note)
 ```
 

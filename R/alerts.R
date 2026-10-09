@@ -27,21 +27,47 @@ alerts_of <- function(snap) {
     )
 }
 
-new_alerts <- function(snap, base) anti_join(alerts_of(snap), base, by = c("package", "type", "when"))
+# The ledger (data/alerts.csv) remembers every alert that has been announced,
+# so each one is announced once: across same-day re-runs, outages, anything.
+# A complete run forgets alerts that are no longer flagged (so they can be
+# announced again if they come back); a partial run forgets nothing.
+alert_keys <- c("package", "type", "when")
+
+read_ledger <- function(path) {
+  empty <- tibble(package = character(), type = character(), when = character(), first_seen = character())
+  if (!file.exists(path)) return(empty)
+  read_csv(path, col_types = cols(.default = col_character()), na = character(), show_col_types = FALSE) |>
+    bind_rows(empty)
+}
+
+update_ledger <- function(ledger, active, new, today, complete) {
+  kept <- if (complete) semi_join(ledger, active, by = alert_keys) else ledger
+  bind_rows(kept, new |> transmute(package, type, when, first_seen = as.character(today))) |>
+    distinct(across(all_of(alert_keys)), .keep_all = TRUE) |>
+    arrange(package, type)
+}
+
+# Flagged now and not yet announced. In a partial run only alerts that come
+# from CRAN's own data are trusted: others (not-found, gh-archived) can be
+# artefacts of the outage, so they wait for a complete run.
+new_alerts <- function(snap, ledger, degraded = character()) {
+  trusted <- if (!length(degraded)) settings$alert_types else c("deadline", "orphaned", if (!"cran_in" %in% degraded) "archived")
+  alerts_of(snap) |>
+    filter(type %in% trusted) |>
+    anti_join(ledger, by = alert_keys)
+}
 
 # Files for the workflow's issue step (.github/scripts/sync-alert-issue.sh):
 #   active.md   issue body: everything flagged now
-#   new.md      comment: alerts not in `base` (already flagged since the last
-#               complete run), which @mentions you. Written in partial runs too:
-#               what is flagged is reliable, only unresolved packages are missing
+#   new.md      comment: alerts not announced before, which @mentions you
 #   degraded    present when a lookup source failed: alerts may be incomplete,
 #               so the script won't close the issue
-write_alerts <- function(snap, base, base_date, dir, degraded = character(), mention = Sys.getenv("ALERT_MENTION")) {
+write_alerts <- function(snap, ledger, prev_date, dir, degraded = character(), mention = Sys.getenv("ALERT_MENTION")) {
   unlink(dir, recursive = TRUE)
   dir.create(dir, showWarnings = FALSE)
 
   active <- alerts_of(snap)
-  new    <- new_alerts(snap, base)
+  new    <- new_alerts(snap, ledger, degraded)
   cc     <- if (nzchar(mention)) paste0("cc @", mention) else ""
 
   if (length(degraded)) writeLines(degraded, file.path(dir, "degraded"))
@@ -55,7 +81,7 @@ write_alerts <- function(snap, base, base_date, dir, degraded = character(), men
   ), file.path(dir, "active.md"))
 
   if (nrow(new)) writeLines(c(
-    if (is.null(base_date)) glue("New alerts: {cc}") else glue("New since {base_date}: {cc}"), "",
+    if (is.null(prev_date)) glue("New alerts: {cc}") else glue("New since the {prev_date} run: {cc}"), "",
     glue("- **{new$package}**: {new$detail}")
   ), file.path(dir, "new.md"))
 

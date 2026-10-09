@@ -80,7 +80,7 @@ jobs:
         run: |
           Rscript run.R
           # one-line summary as a notice on the run page
-          jq -r '"sources: " + ([.sources | to_entries[] | "\(.key) \(if .value.ok then "ok" else "FAILED" end)"] | join(", ")) + "; score formula match: \(.sources.ru_detail.formula_match // "n/a")"' data/run.json | sed 's/^/::notice title=cranwatch::/'
+          jq -r '"sources: " + ([.sources | to_entries[] | "\(.key) \(if .value.ok then (if (.value.partial // .value.failed) then "partial" else "ok" end) else "FAILED" end)"] | join(", ")) + "; score formula match: \(.sources.ru_detail.formula_match // "n/a")"' data/run.json | sed 's/^/::notice title=cranwatch::/'
 
       - name: Commit snapshot
         if: env.PUBLISH == 'true'

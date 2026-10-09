@@ -29,7 +29,8 @@ Monday 06:17 UTC (or push / manual run)
        ├─ GitHub API   (only repos not found elsewhere)
        └─ data/snapshots/<date>.csv, data/latest.csv, data/run.json, _alerts/*.md
   ├─ commit data/
-  ├─ sync the "cranwatch alerts" issue (open / comment on new / close when clear)
+  ├─ sync the "cranwatch alerts" issue (open / comment on new / close when clear;
+  │  data/alerts.csv remembers what was announced, so each alert is announced once)
   └─ quarto render site → GitHub Pages
 ```
 
@@ -68,7 +69,7 @@ Then `quarto render site` in a terminal (needs the [Quarto CLI](https://quarto.o
 | `R/` | Pipeline: `cran.R`, `runiverse.R`, `cranlogs.R`, `github.R` (fetch + metrics per source), `build.R` (status/flags), `alerts.R`, `schema.R` (snapshot columns), `main.R` |
 | `tests/testthat/` | Offline tests: unit tests + the full pipeline on fake sources |
 | `site/` | Quarto site: Radar (reactable table), Themes, How to judge a package, Columns & sources |
-| `data/` | Snapshots, written by the workflow |
+| `data/` | Written by the workflow: `snapshots/<date>.csv`, `latest.csv`, `run.json` (sources, request counts), `alerts.csv` (announced alerts) |
 | `IDEAS.txt` | Scratchpad |
 
 ## Caveats

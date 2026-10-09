@@ -51,7 +51,7 @@ main <- function(root = ".", today = Sys.Date(), fetch = default_fetchers(), wri
     cran_metrics(cran_db, cran_in, watch$package),
     ru_metrics(index, detail, watch),
     install_metrics(cran_db, sysdeps, watch$package, sys_watch),
-    revdep_metrics(cran_db, index, watch$package)
+    revdep_metrics(cran_db, index, watch$package, complete = is.null(attr(index, "partial")))
   ) |>
     reduce(left_join, by = "package") |>
     assign_status()
@@ -81,14 +81,8 @@ write_outputs <- function(snap, root, today, sources, degraded = character()) {
   date_of  <- \(p) if (length(p)) str_remove(basename(p), "\\.csv$")
   # run.json "previous": the last run on an earlier day
   prev_path <- snaps |> keep(\(p) date_of(p) < as.character(today)) |> tail(1)
-  # Alert baseline, read before today's file is overwritten: every alert already
-  # flagged since the last complete run, incl. later partial runs and an earlier
-  # run today. So nothing is announced twice, and alerts an outage hid (e.g.
-  # not-found turned "unknown") aren't announced again once it's over.
-  earlier   <- snaps |> keep(\(p) date_of(p) <= as.character(today)) |> rev() |> map(read_snapshot)
-  last_ok   <- detect_index(earlier, \(s) !isFALSE(s$lookups_ok[1]))
-  base      <- bind_rows(alerts_of(NULL), map(if (last_ok) earlier[seq_len(last_ok)] else earlier, alerts_of))
-  base_date <- if (last_ok) as.character(earlier[[last_ok]]$run_date[1])
+  ledger_path <- file.path(data_dir, "alerts.csv")
+  ledger      <- read_ledger(ledger_path)
 
   c(file.path(snap_dir, paste0(today, ".csv")), file.path(data_dir, "latest.csv")) |>
     walk(\(p) write_csv(snap, p, na = ""))
@@ -104,6 +98,8 @@ write_outputs <- function(snap, root, today, sources, degraded = character()) {
   ) |>
     write_json(file.path(data_dir, "run.json"), auto_unbox = TRUE, pretty = TRUE)
 
-  write_alerts(snap, base, base_date, file.path(root, "_alerts"), degraded)
+  alerts <- write_alerts(snap, ledger, date_of(prev_path), file.path(root, "_alerts"), degraded)
+  update_ledger(ledger, alerts$active, alerts$new, today, complete = !length(degraded)) |>
+    write_csv(ledger_path, na = "")
   invisible(snap)
 }

@@ -9,8 +9,8 @@ fetch_github <- function(repos, get = gh_get) {
 
 # A GitHub-wide problem (bad token, rate limit, outage) stops the source, so
 # main() marks lookups incomplete and unresolved packages become "unknown"
-# rather than raising not-found alerts. Anything else that isn't a 200 (404,
-# 451, a blocked repo) is this repo's own answer: not found.
+# rather than raising not-found alerts. A 404, 451 or blocked repo is this
+# repo's own answer: not found.
 gh_repo_info <- function(repo, get = gh_get) {
   resp <- get("repos", repo)
   if (gh_systemic(resp)) stop("GitHub API ", resp_status(resp), " for ", repo, call. = FALSE)
@@ -29,8 +29,13 @@ gh_repo_info <- function(repo, get = gh_get) {
 
 gh_systemic <- function(resp) {
   status <- resp_status(resp)
-  status %in% c(401, 429) || status >= 500 ||
-    (status == 403 && (identical(resp_header(resp, "x-ratelimit-remaining"), "0") || !is.null(resp_header(resp, "retry-after"))))
+  if (status %in% c(401, 429) || status >= 500) return(TRUE)
+  if (status != 403) return(FALSE)
+  # A 403 is about one repo only when GitHub says that repo is blocked; any
+  # other 403 (rate limits, which may come without headers, a bad token, a
+  # proxy) is GitHub-wide
+  body <- tryCatch(resp_body_string(resp), error = \(e) "")
+  !str_detect(body, "(?i)repository access blocked|\"block\"\\s*:")
 }
 
 gh_get <- function(...) {
