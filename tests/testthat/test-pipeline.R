@@ -116,3 +116,25 @@ test_that("run.json records request counts", {
   main(root, test_today, fake_fetchers())
   expect_true(all(c("sent", "from_cache") %in% names(fromJSON(file.path(root, "data", "run.json"))$requests)))
 })
+
+test_that("a new alert during an outage is announced then, and not again after", {
+  root <- fake_root()
+  writeLines(c("core:", "  - alpha", "  - beta", "  - delta"), file.path(root, "packages.yml")) # all CRAN: nothing turns "unknown"
+  db2 <- fake_db |> mutate(Deadline = if_else(Package == "beta", "2026-11-01", Deadline))
+
+  main(root, test_today - 14, fake_fetchers())
+  main(root, test_today - 7, fake_fetchers(ru_index = \() stop("down"), cran_db = \() add_na_cols(db2, cran_fields)))
+  expect_equal(readLines(file.path(root, "_alerts", "new.md")) |> str_subset("^- "), "- **beta**: CRAN deadline 2026-11-01")
+
+  main(root, test_today, fake_fetchers(cran_db = \() add_na_cols(db2, cran_fields)))
+  expect_false(file.exists(file.path(root, "_alerts", "new.md")))
+})
+
+test_that("alerts first announced during an outage aren't re-announced when it ends", {
+  root <- fake_root()
+  main(root, test_today - 7, fake_fetchers(github = \(repos) stop("GitHub API 502"))) # first ever run is partial
+  expect_true(file.exists(file.path(root, "_alerts", "new.md")))
+  main(root, test_today, fake_fetchers())
+  new <- file.path(root, "_alerts", "new.md")
+  expect_equal(if (file.exists(new)) str_subset(readLines(new), "^- ") else character(), "- **hotel**: not found on CRAN, r-universe or GitHub; check packages.yml")
+})

@@ -23,8 +23,14 @@ ru_index_cols <- c(
 
 fetch_ru_index <- function() {
   global <- ru_search_all(settings$ru_global)
-  cran   <- ru_search_all(ru_url("cran", "")) |> anti_join(global, by = "package")
-  bind_rows(global, cran)
+  # the cran supplement is optional: if it fails, keep the global index (attr "partial")
+  cran <- tryCatch(ru_search_all(ru_url("cran", "")), error = \(e) {
+    msg("ru_index: cran universe search failed - {conditionMessage(e)}")
+    NULL
+  })
+  out <- bind_rows(global, if (!is.null(cran)) anti_join(cran, global, by = "package"))
+  if (is.null(cran)) attr(out, "partial") <- "cran universe search failed"
+  out
 }
 
 ru_search_all <- function(base) {
@@ -57,34 +63,36 @@ ru_detail_fields <- c(
   "_updates", "_contributors.user", "_vignettes.title", "_datasets.name", "_releases.version"
 )
 
-# A universe that fails is skipped (and listed in attr "failed"), not fatal
+# A universe or package that fails is skipped (and listed in attr "failed"), not fatal
 fetch_ru_detail <- function(picked) {
-  none   <- tibble(package = character(), universe = character())
+  none   <- tibble(package = character(), universe = character()) # typed: list_rbind(list()) has no columns
   failed <- character()
-  try_u  <- \(u, f) tryCatch(f(), error = \(e) {
-    failed <<- union(failed, u)
-    msg("ru_detail: {u} failed - {conditionMessage(e)}")
+  try_or_skip <- \(what, f) tryCatch(f(), error = \(e) {
+    failed <<- c(failed, what)
+    msg("ru_detail: {what} failed - {conditionMessage(e)}")
     NULL
   })
 
   listed <- picked |>
     distinct(universe) |>
     pull() |>
-    map(\(u) try_u(u, \() ru_universe_detail(u, picked))) |>
-    list_rbind() %||% none
+    map(\(u) try_or_skip(u, \() ru_universe_detail(u, picked))) |>
+    list_rbind() |>
+    bind_rows(none)
 
   # The cran universe only lists its indexed packages: fetch the rest one by one
   single <- picked |>
     anti_join(listed, by = c("package", "universe")) |>
     filter(!universe %in% failed) |>
     select(package, universe) |>
-    pmap(\(package, universe) try_u(universe, \() {
+    pmap(\(package, universe) try_or_skip(paste0(universe, "/", package), \() {
       ru_url(universe, paste0("/api/packages/", package)) |>
         cached_get() |>
         fromJSON(simplifyVector = FALSE) |>
         ru_components()
     })) |>
-    list_rbind() %||% none
+    list_rbind() |>
+    bind_rows(none)
 
   out <- bind_rows(listed, single)
   attr(out, "failed") <- failed
@@ -100,7 +108,7 @@ ru_universe_detail <- function(universe, picked) {
     map(\(line) ru_components(fromJSON(line, simplifyVector = FALSE))) |>
     list_rbind()
 
-  (rows %||% tibble(package = character(), universe = character())) |> semi_join(picked, by = c("package", "universe"))
+  bind_rows(tibble(package = character(), universe = character()), rows) |> semi_join(picked, by = c("package", "universe"))
 }
 
 # One package record -> the numbers r-universe's score is built from
@@ -180,6 +188,7 @@ fetch_ru_sysdeps <- function() {
     discard(\(line) line == "") |>
     map(parse_sysdep_line) |>
     list_rbind() |>
+    bind_rows(tibble(library = character(), package = character())) |>
     distinct()
 }
 

@@ -78,11 +78,18 @@ test_that("fmt_short rounds each value on its own", {
   expect_equal(fmt_short(c(4890, 209, 39438, 1234567, 12, NA)), c("4.9K", "210", "39K", "1.2M", "12", ""))
 })
 
-test_that("GitHub: 404 = missing repo, any other error stops the source", {
-  fake <- \(codes) \(...) response(status_code = codes[[paste(c(...), collapse = "/")]] %||% 200,
-                                   headers = list(`Content-Type` = "application/json"), body = charToRaw("{}"))
+test_that("GitHub: repo-level errors = not found, GitHub-wide errors stop the source", {
+  fake <- \(codes, remaining = "4999") \(...) response(
+    status_code = codes[[paste(c(...), collapse = "/")]] %||% 200,
+    headers = list(`Content-Type` = "application/json", `x-ratelimit-remaining` = remaining), body = charToRaw("{}")
+  )
   expect_equal(gh_repo_info("o/r", fake(list(`repos/o/r` = 404))), tibble(repo = "o/r"))
-  expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 403))), "GitHub API 403")
+  expect_equal(gh_repo_info("o/r", fake(list(`repos/o/r` = 451))), tibble(repo = "o/r"))
+  expect_equal(gh_repo_info("o/r", fake(list(`repos/o/r` = 403))), tibble(repo = "o/r"))  # blocked repo
+  expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 403), remaining = "0")), "GitHub API 403") # rate limit
+  expect_error(gh_repo_info("o/r", fake(list(`repos/o/r` = 502))), "GitHub API 502")
+  secondary <- \(...) response(status_code = 403, headers = list(`retry-after` = "60"), body = charToRaw("{}"))
+  expect_error(gh_repo_info("o/r", secondary), "GitHub API 403") # secondary rate limit
   expect_true(is.na(gh_repo_info("o/r", fake(list(`repos/o/r/contents/DESCRIPTION` = 502)))$gh_is_pkg))
   expect_false(gh_repo_info("o/r", fake(list(`repos/o/r/contents/DESCRIPTION` = 404)))$gh_is_pkg)
 })
@@ -100,4 +107,12 @@ test_that("requests to one host are spaced out", {
   expect_gte(as.numeric(Sys.time() - t0, units = "secs"), 2 / settings$max_req_per_sec - 0.05)
   expect_equal(http_log$sent[["example.invalid"]], 3)
   http_reset()
+})
+
+test_that("watch flags see requirement items that the display hides", {
+  db <- tibble(Package = c("v8ish", "user"), NeedsCompilation = "yes",
+               SystemRequirements = c("On Linux you can build against libv8-dev (Debian) or v8-devel (Fedora)", NA),
+               Depends = NA_character_, Imports = c(NA, "v8ish"), LinkingTo = NA_character_)
+  out <- install_metrics(db, NULL, c("v8ish", "user"), c("libv8", "cmake"))
+  expect_equal(out$sysreqs_watch, c("libv8", "libv8"))
 })

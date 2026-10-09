@@ -9,6 +9,7 @@ snapshot_cols <- c(
   package           = "chr",
   themes            = "chr",
   status            = "chr", # base / cran / cran-archived / r-universe / github / not-found / unknown
+  lookups_ok        = "lgl", # FALSE: a lookup source failed this run (some statuses "unknown", alerts partial)
   title             = "chr",
   version           = "chr",
   published         = "date",

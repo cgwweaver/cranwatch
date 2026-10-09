@@ -27,19 +27,21 @@ alerts_of <- function(snap) {
     )
 }
 
-new_alerts <- function(snap, prev) anti_join(alerts_of(snap), alerts_of(prev), by = c("package", "type", "when"))
+new_alerts <- function(snap, base) anti_join(alerts_of(snap), base, by = c("package", "type", "when"))
 
 # Files for the workflow's issue step (.github/scripts/sync-alert-issue.sh):
 #   active.md   issue body: everything flagged now
-#   new.md      comment: what's new since `base` (the comment @mentions you)
+#   new.md      comment: alerts not in `base` (already flagged since the last
+#               complete run), which @mentions you. Written in partial runs too:
+#               what is flagged is reliable, only unresolved packages are missing
 #   degraded    present when a lookup source failed: alerts may be incomplete,
-#               so the script neither comments nor closes the issue
+#               so the script won't close the issue
 write_alerts <- function(snap, base, base_date, dir, degraded = character(), mention = Sys.getenv("ALERT_MENTION")) {
   unlink(dir, recursive = TRUE)
   dir.create(dir, showWarnings = FALSE)
 
   active <- alerts_of(snap)
-  new    <- if (length(degraded)) alerts_of(NULL) else new_alerts(snap, base)
+  new    <- new_alerts(snap, base)
   cc     <- if (nzchar(mention)) paste0("cc @", mention) else ""
 
   if (length(degraded)) writeLines(degraded, file.path(dir, "degraded"))

@@ -87,10 +87,11 @@ install_metrics <- function(db, sysdeps, pkgs, sys_watch) {
   compiled <- db$Package[db$NeedsCompilation %in% "yes"]
   sysdeps  <- sysdeps %||% tibble(package = character(), library = character())
 
-  own <- reqs |> summarise(sysreqs = paste(item, collapse = "; "), .by = package)
+  shown <- reqs |> filter(!noise)
+  own   <- shown |> summarise(sysreqs = paste(item, collapse = "; "), .by = package)
 
   via <- dep_long |>
-    inner_join(reqs, by = c(dep = "package"), relationship = "many-to-many") |>
+    inner_join(shown, by = c(dep = "package"), relationship = "many-to-many") |>
     summarise(optional = all(optional), deps = list(sort(unique(dep))), .by = c(package, name)) |>
     mutate(label = paste0(name, if_else(optional, " (optional)", ""), " [", map_chr(deps, label_few), "]")) |>
     summarise(sysreqs_via_deps = paste(label, collapse = "; "), .by = package)
@@ -99,23 +100,23 @@ install_metrics <- function(db, sysdeps, pkgs, sys_watch) {
     inner_join(sysdeps, by = c(dep = "package"), relationship = "many-to-many") |>
     summarise(sysdeps_detected = paste(sort(unique(library)), collapse = "; "), .by = package)
 
-  # sys-deps.yml hits among deps, matched on their full requirement text (the
-  # via-deps labels are shortened)
-  dep_hits <- dep_long |>
+  # sys-deps.yml hits in its own or its deps' requirements: matched on every
+  # item's full text (display drops some items and shortens names)
+  req_hits <- bind_rows(deps |> transmute(package, dep = package), dep_long) |>
     inner_join(reqs |> transmute(dep = package, hit = watch_hits(item, sys_watch)) |> filter(!is.na(hit)),
                by = "dep", relationship = "many-to-many") |>
-    summarise(dep_hits = paste(unique(hit), collapse = "; "), .by = package)
+    summarise(req_hits = paste(unique(hit), collapse = "; "), .by = package)
 
   list(
     deps |> transmute(package, deps_n = lengths(dep), deps_compiled_n = map_dbl(dep, \(d) sum(d %in% compiled))),
     own,
     via,
     detected,
-    dep_hits
+    req_hits
   ) |>
     reduce(left_join, by = "package") |>
-    mutate(sysreqs_watch = watch_hits(paste(sysreqs, dep_hits, sysdeps_detected), sys_watch)) |>
-    select(-dep_hits)
+    mutate(sysreqs_watch = watch_hits(paste(req_hits, sysdeps_detected), sys_watch)) |>
+    select(-req_hits)
 }
 
 # SystemRequirements of every CRAN package, one row per item
@@ -125,10 +126,14 @@ sysreq_items <- function(db) {
     transmute(package = Package, item = split_sysreqs(SystemRequirements)) |>
     unnest_longer(item) |>
     mutate(
-      name     = item |> str_remove("\\s*[(\\[:].*$") |> str_squish() |> str_trunc(40), # some are whole sentences
-      optional = str_detect(item, "(?i)optional")
-    ) |>
-    filter(name != "", !str_detect(name, settings$sysreq_noise))
+      name     = item |>
+        str_remove("\\s*[(\\[:].*$") |>
+        str_remove("(?i)-(dev|devel)$") |> # "libxml2-devel" (an rpm alias) -> "libxml2"
+        str_squish() |>
+        str_trunc(40), # some are whole sentences
+      optional = str_detect(item, "(?i)optional"),
+      noise    = name == "" | str_detect(name, settings$sysreq_noise)
+    )
 }
 
 # Which sys-deps.yml libraries show up (whole word, any case) in each text

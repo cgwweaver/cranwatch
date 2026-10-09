@@ -28,3 +28,17 @@ test_that("sysdeps NDJSON lines become library-package pairs", {
   line <- '{"library":"libxml2","usedby":[{"owner":"cran","package":"xml2"},{"owner":"cran","package":"igraph"}]}'
   expect_equal(parse_sysdep_line(line), tibble(library = "libxml2", package = c("xml2", "igraph")))
 })
+
+test_that("ru_detail falls back to single-package records when a listing has none of ours", {
+  dir <- tempfile("cache-"); dir.create(dir)
+  old <- settings$cache_dir; settings$cache_dir <<- dir; on.exit(settings$cache_dir <<- old)
+  put <- \(url, lines) writeLines(lines, file.path(dir, rlang::hash(url)))
+  put(paste0(ru_url("cran", "/api/packages"), "?stream=true&limit=10000&fields=", paste(ru_detail_fields, collapse = ",")),
+      '{"Package":"other","_user":"cran","_score":1}')
+  put(ru_url("cran", "/api/packages/future"), '{"Package":"future","_user":"cran","_score":11.6,"_stars":9}')
+
+  out <- fetch_ru_detail(tibble(package = "future", universe = "cran"))
+  expect_equal(out$package, "future")
+  expect_equal(out$score, 11.6)
+  expect_length(attr(out, "failed"), 0)
+})

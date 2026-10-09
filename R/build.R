@@ -14,17 +14,18 @@ assign_status <- function(snap) {
     ))
 }
 
-# Second pass + derived columns. lookups_ok = FALSE (a lookup API failed) turns
+# Second pass + derived columns. complete = FALSE (a lookup API failed) turns
 # would-be "not-found" into "unknown", so an outage doesn't raise alerts.
-finalize <- function(snap, today, lookups_ok = TRUE) {
+finalize <- function(snap, today, complete = TRUE) {
   snap |>
     ensure_cols() |>
     mutate(
-      run_date = today,
+      run_date   = today,
+      lookups_ok = complete, # (an argument named like the column would be masked by it)
       repo     = coalesce(repo, cran_repo),
       status   = coalesce(status, case_when(
         !is.na(gh_stars) ~ "github",
-        lookups_ok       ~ "not-found",
+        complete         ~ "not-found",
         .default         = "unknown"
       )),
       link = case_when(

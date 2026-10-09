@@ -37,11 +37,12 @@ main <- function(root = ".", today = Sys.Date(), fetch = default_fetchers(), wri
   cran_db <- src("cran_db") %||% stop("CRAN package db unavailable; not writing a snapshot", call. = FALSE)
   cran_in <- src("cran_in")
   index   <- src("ru_index")
+  if (!is.null(attr(index, "partial"))) sources$ru_index$partial <- attr(index, "partial")
   detail  <- if (!is.null(index)) src("ru_detail", ru_pick(index, watch))
   if (!is.null(detail)) {
     match <- ru_formula_match(detail)
     if (is.finite(match)) sources$ru_detail$formula_match <- match
-    if (length(attr(detail, "failed"))) sources$ru_detail$failed_universes <- attr(detail, "failed")
+    if (length(attr(detail, "failed"))) sources$ru_detail$failed <- attr(detail, "failed")
   }
   sysdeps <- src("ru_sysdeps")
 
@@ -65,7 +66,7 @@ main <- function(root = ".", today = Sys.Date(), fetch = default_fetchers(), wri
   snap <- snap |>
     left_join(dl %||% tibble(package = character()), by = "package") |>
     left_join(gh %||% tibble(repo = character()), by = "repo") |>
-    finalize(today, lookups_ok = !length(degraded))
+    finalize(today, complete = !length(degraded))
 
   msg("status: {snap |> count(status) |> glue_data('{status} {n}') |> paste(collapse = ', ')}")
   if (write) write_outputs(snap, root, today, sources, degraded) else invisible(snap)
@@ -80,13 +81,14 @@ write_outputs <- function(snap, root, today, sources, degraded = character()) {
   date_of  <- \(p) if (length(p)) str_remove(basename(p), "\\.csv$")
   # run.json "previous": the last run on an earlier day
   prev_path <- snaps |> keep(\(p) date_of(p) < as.character(today)) |> tail(1)
-  # Alert baseline, read before today's file is overwritten: the newest snapshot
-  # (today's included, so a same-day re-run doesn't re-announce) whose lookups
-  # were complete (so alerts an outage hid aren't announced again afterwards)
-  base_path <- rev(snaps) |>
-    keep(\(p) date_of(p) <= as.character(today)) |>
-    detect(\(p) !any(read_snapshot(p)$status %in% "unknown"))
-  base <- if (length(base_path)) read_snapshot(base_path)
+  # Alert baseline, read before today's file is overwritten: every alert already
+  # flagged since the last complete run, incl. later partial runs and an earlier
+  # run today. So nothing is announced twice, and alerts an outage hid (e.g.
+  # not-found turned "unknown") aren't announced again once it's over.
+  earlier   <- snaps |> keep(\(p) date_of(p) <= as.character(today)) |> rev() |> map(read_snapshot)
+  last_ok   <- detect_index(earlier, \(s) !isFALSE(s$lookups_ok[1]))
+  base      <- bind_rows(alerts_of(NULL), map(if (last_ok) earlier[seq_len(last_ok)] else earlier, alerts_of))
+  base_date <- if (last_ok) as.character(earlier[[last_ok]]$run_date[1])
 
   c(file.path(snap_dir, paste0(today, ".csv")), file.path(data_dir, "latest.csv")) |>
     walk(\(p) write_csv(snap, p, na = ""))
@@ -102,6 +104,6 @@ write_outputs <- function(snap, root, today, sources, degraded = character()) {
   ) |>
     write_json(file.path(data_dir, "run.json"), auto_unbox = TRUE, pretty = TRUE)
 
-  write_alerts(snap, base, date_of(base_path), file.path(root, "_alerts"), degraded)
+  write_alerts(snap, base, base_date, file.path(root, "_alerts"), degraded)
   invisible(snap)
 }

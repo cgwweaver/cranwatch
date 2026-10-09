@@ -25,8 +25,8 @@ settings <- list(
   revdep_min_n      = 3,  # ...and only list the top ones if at least this many
   revdep_top_n      = 3,
   strong_deps       = c("Depends", "Imports", "LinkingTo"),
-  # SystemRequirements fragments not worth showing: compilers/make, distro
-  # package aliases ("libxml2-devel"), prose ("or ...", "see the README")
-  sysreq_noise      = "(?i)^(gnu make|c\\+\\+\\s*\\d*)$|^(or|see|for|and|on)\\b|-(dev|devel)$",
+  # SystemRequirements items not worth *showing* (watch flags still see them):
+  # compilers/make, and split-off continuations ("or ...", "see the README")
+  sysreq_noise      = "(?i)^(gnu make|c\\+\\+\\s*\\d*)$|^(or|see)\\b",
   alert_types       = c("deadline", "archived", "orphaned", "not-found", "gh-archived")
 )

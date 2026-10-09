@@ -3,8 +3,8 @@
 #   alerts, no open issue  -> open one (the @mention emails you)
 #   alerts, open issue     -> refresh the body; comment only with what's new
 #   no alerts, open issue  -> close it
-# If a lookup source failed (_alerts/degraded), alerts may be incomplete: then
-# the body is refreshed (it says so) but nothing is announced or closed.
+# If a lookup source failed (_alerts/degraded), alerts may be incomplete: the
+# body says so, and the issue is not closed.
 set -euo pipefail
 
 label="cranwatch-alert"

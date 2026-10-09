@@ -7,13 +7,14 @@ fetch_github <- function(repos, get = gh_get) {
   unique(repos) |> map(\(r) gh_repo_info(r, get)) |> list_rbind()
 }
 
-# Only a 404 means "no such repo". Anything else that isn't a 200 (rate limit,
-# outage, bad token) stops the source, so main() marks lookups as incomplete and
-# unresolved packages become "unknown" rather than raising not-found alerts.
+# A GitHub-wide problem (bad token, rate limit, outage) stops the source, so
+# main() marks lookups incomplete and unresolved packages become "unknown"
+# rather than raising not-found alerts. Anything else that isn't a 200 (404,
+# 451, a blocked repo) is this repo's own answer: not found.
 gh_repo_info <- function(repo, get = gh_get) {
   resp <- get("repos", repo)
-  if (resp_status(resp) == 404) return(tibble(repo = repo))
-  if (resp_status(resp) != 200) stop("GitHub API ", resp_status(resp), " for ", repo, call. = FALSE)
+  if (gh_systemic(resp)) stop("GitHub API ", resp_status(resp), " for ", repo, call. = FALSE)
+  if (resp_status(resp) != 200) return(tibble(repo = repo))
   body <- resp_body_json(resp)
   desc <- resp_status(get("repos", repo, "contents", "DESCRIPTION"))
 
@@ -22,8 +23,14 @@ gh_repo_info <- function(repo, get = gh_get) {
     gh_stars    = as_num(body$stargazers_count %||% NA),
     gh_pushed   = as.Date(str_sub(body$pushed_at %||% NA_character_, 1, 10)),
     gh_archived = body$archived %||% NA,
-    gh_is_pkg   = if (desc == 200) TRUE else if (desc == 404) FALSE else NA
+    gh_is_pkg   = if (desc == 200) TRUE else if (desc == 404) FALSE else NA # NA: couldn't tell
   )
+}
+
+gh_systemic <- function(resp) {
+  status <- resp_status(resp)
+  status %in% c(401, 429) || status >= 500 ||
+    (status == 403 && (identical(resp_header(resp, "x-ratelimit-remaining"), "0") || !is.null(resp_header(resp, "retry-after"))))
 }
 
 gh_get <- function(...) {
