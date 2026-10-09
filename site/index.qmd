@@ -1,0 +1,168 @@
+---
+title: "cranwatch"
+subtitle: "Health radar for the R packages I use, or am eyeing, at work"
+---
+
+```{r}
+#| include: false
+for (f in list.files("../R", pattern = "\\.R$", full.names = TRUE)) source(f)
+library(reactable)
+library(htmltools)
+
+snap  <- read_snapshot("../data/latest.csv")
+run   <- read_json("../data/run.json")
+links <- read_yaml("../links.yml")
+repo  <- gh_repo # from R/settings.R
+
+failed    <- run$sources |> keep(\(s) !isTRUE(s$ok)) |> names()
+partial   <- run$sources |> keep(\(s) isTRUE(s$ok) && (!is.null(s$partial) || length(s$failed))) |> names()
+sources   <- c(
+  if (length(failed)) paste("**FAILED:**", paste(failed, collapse = ", ")),
+  if (length(partial)) paste("partial:", paste(partial, collapse = ", "))
+) |> paste(collapse = "; ")
+if (!nzchar(sources)) sources <- "all ok"
+note      <- \(l) if (is.null(l$note)) "" else paste0(": ", l$note)
+```
+
+**`r nrow(snap)` packages** · run `r run$run_date` · downloads `r run$dl_windows$dl_365[[1]]` to `r run$dl_windows$dl_365[[2]]` · sources `r sources` ·
+[CSV](https://github.com/`r repo`/blob/main/data/latest.csv) · [history](https://github.com/`r repo`/tree/main/data/snapshots) · [edit watchlist](https://github.com/`r repo`/edit/main/packages.yml)
+
+```{r}
+#| results: asis
+alerts <- alerts_of(snap) |> left_join(snap |> select(package, link), by = "package")
+if (nrow(alerts)) {
+  cat("::: {.callout-warning}\n## Alerts\n\n")
+  cat(glue("- **{md_pkg(alerts$package, alerts$link)}**: {alerts$detail}"), sep = "\n")
+  cat("\n:::\n")
+}
+```
+
+```{r}
+#| column: screen-inset
+notes <- read_watch_notes("../packages.yml") |>
+  filter(!is.na(package)) |>
+  summarise(notes = paste(unique(note), collapse = "; "), .by = package)
+
+tbl <- snap |>
+  left_join(notes, by = "package") |>
+  select(
+    package, title, link, themes, status,
+    ru_score, dl_365, dl_growth, ru_stars, ru_dependents,
+    deadline, archived_n, archived_last, cran_comment,
+    needs_compilation, deps_n, deps_compiled_n, sysreqs, sysreqs_via_deps, sysdeps_detected,
+    revdeps_n, revdeps_top, flags, notes
+  )
+
+hidden <- c("title", "link", "archived_last", "cran_comment", "sysreqs_via_deps", "sysdeps_detected")
+
+flag_badges <- \(value) {
+  if (is.na(value)) return("")
+  str_split_1(value, "; ") |> map(\(f) span(class = paste0("flag flag-", f), f)) |> tagList()
+}
+
+muted <- \(...) div(class = "muted", ...)
+
+# Hover text for the score: what it's made of (see "Columns & sources")
+score_parts <- ru_score_parts(snap, "ru_") |>
+  pmap_chr(\(...) { p <- round(c(...), 1); paste0("= 1 + ", paste(p[p > 0], names(p)[p > 0], collapse = " + ")) })
+score_tip <- if_else(is.na(snap$ru_update_weeks), "", score_parts)
+
+reactable(
+  tbl,
+  searchable = TRUE, filterable = TRUE, highlight = TRUE, striped = TRUE, compact = TRUE,
+  defaultSorted = "ru_score", defaultSortOrder = "desc",
+  defaultPageSize = 50, showPageSizeOptions = TRUE, pageSizeOptions = c(25, 50, 200),
+  defaultColDef = colDef(minWidth = 75, headerVAlign = "bottom", headerStyle = list(whiteSpace = "nowrap")),
+  columnGroups = list(
+    colGroup("Popularity", c("ru_score", "dl_365", "dl_growth", "ru_stars", "ru_dependents")),
+    colGroup("CRAN health", c("deadline", "archived_n")),
+    colGroup("Install burden", c("needs_compilation", "deps_n", "deps_compiled_n", "sysreqs")),
+    colGroup("Reverse deps", c("revdeps_n", "revdeps_top"))
+  ),
+  columns = c(
+    set_names(map(hidden, \(x) colDef(show = FALSE)), hidden),
+    list(
+      package = colDef(name = "Package", sticky = "left", minWidth = 130, cell = \(value, i) {
+        # NA attributes crash reactable's React renderer, hence coalesce()
+        if (is.na(tbl$link[i])) value else a(href = tbl$link[i], title = coalesce(tbl$title[i], ""), target = "_blank", value)
+      }),
+      themes  = colDef(name = "Themes", minWidth = 120),
+      status  = colDef(name = "Status", minWidth = 100, cell = \(value) span(class = paste0("status status-", value), value)),
+      ru_score      = colDef(name = "Score", cell = \(value, i) {
+        if (is.na(value)) "" else span(title = score_tip[i], class = if (nzchar(score_tip[i])) "has-tip", format(round(value, 1), nsmall = 1))
+      }),
+      dl_365        = colDef(name = "DLs/yr", cell = fmt_short),
+      dl_growth     = colDef(name = "vs prev", format = colFormat(percent = TRUE, digits = 0)),
+      ru_stars      = colDef(name = "Stars", cell = fmt_short),
+      ru_dependents = colDef(name = "Used by", minWidth = 80, cell = fmt_short),
+      deadline      = colDef(name = "Deadline", minWidth = 100, cell = \(value) if (is.na(value)) "" else span(class = "bad", format(value))),
+      archived_n    = colDef(name = "Archived", minWidth = 100, cell = \(value, i) {
+        if (is.na(value) || value == 0) return("")
+        span(title = coalesce(tbl$cran_comment[i], ""), value, muted("last ", format(tbl$archived_last[i])))
+      }),
+      needs_compilation = colDef(name = "Compiles", minWidth = 85, cell = \(value) if (isTRUE(value)) "yes" else ""),
+      deps_n            = colDef(name = "Deps"),
+      deps_compiled_n   = colDef(name = "Compiled", minWidth = 85),
+      sysreqs = colDef(name = "System reqs", minWidth = 280, cell = \(value, i) {
+        via <- tbl$sysreqs_via_deps[i]
+        det <- tbl$sysdeps_detected[i]
+        tagList(
+          if (!is.na(value)) div(value),
+          if (!is.na(via)) muted(title = via, "via deps: ", str_trunc(via, 90)),
+          if (!is.na(det)) muted("links: ", det)
+        )
+      }),
+      revdeps_n   = colDef(name = "Direct"),
+      revdeps_top = colDef(name = "Top by score", minWidth = 220),
+      flags       = colDef(name = "Flags", minWidth = 160, cell = flag_badges),
+      notes       = colDef(name = "Notes", minWidth = 200)
+    )
+  )
+)
+```
+
+## Movers
+
+```{r}
+snaps    <- list.files("../data/snapshots", pattern = "\\.csv$", full.names = TRUE) |> sort()
+run_date <- as.Date(run$run_date)
+old_path <- snaps |> keep(\(p) as.Date(str_remove(basename(p), "\\.csv$")) <= run_date - 28) |> tail(1)
+old      <- if (length(old_path)) read_snapshot(old_path)
+```
+
+`r if (is.null(old)) "_Score and download trends show up once there are snapshots 4+ weeks apart._" else glue("Biggest r-universe score changes since {old$run_date[1]}:")`
+
+```{r}
+if (!is.null(old)) {
+  snap |>
+    select(package, ru_score, dl_365) |>
+    inner_join(old |> select(package, old_score = ru_score, old_dl = dl_365), by = "package") |>
+    mutate(score_change = ru_score - old_score, dl_change = dl_365 / old_dl - 1) |>
+    filter(!is.na(score_change)) |>
+    slice_max(abs(score_change), n = 10, with_ties = FALSE) |>
+    select(package, ru_score, score_change, dl_change) |>
+    reactable(compact = TRUE, columns = list(
+      ru_score     = colDef(name = "Score", format = colFormat(digits = 1)),
+      score_change = colDef(name = "Change", format = colFormat(digits = 2)),
+      dl_change    = colDef(name = "Downloads change", format = colFormat(percent = TRUE, digits = 0))
+    ))
+}
+```
+
+## Links
+
+Not R packages, but related. From [links.yml](https://github.com/`r repo`/blob/main/links.yml).
+
+```{r}
+#| results: asis
+links$links |> map_chr(\(l) glue("- {md_pkg(l$name, l$url %||% NA)}{note(l)}")) |> cat(sep = "\n")
+```
+
+### Unresolved
+
+Names from the watchlist I couldn't identify yet:
+
+```{r}
+#| results: asis
+links$unresolved |> map_chr(\(l) glue("- **{l$name}**{if (is.null(l$theme)) '' else paste0(' (', l$theme, ')')}{note(l)}")) |> cat(sep = "\n")
+```

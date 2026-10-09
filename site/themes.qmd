@@ -1,0 +1,53 @@
+---
+title: "Themes"
+subtitle: "What each group of packages is for, how they overlap, and what I'd pick"
+toc: true
+toc-depth: 2
+---
+
+```{r}
+#| include: false
+for (f in list.files("../R", pattern = "\\.R$", full.names = TRUE)) source(f)
+snap  <- read_snapshot("../data/latest.csv")
+watch <- read_watchlist("../packages.yml")
+notes <- read_watch_notes("../packages.yml")
+repo  <- gh_repo # from R/settings.R
+```
+
+Short guides for colleagues, one per theme in [`packages.yml`](https://github.com/`r repo`/blob/main/packages.yml). Each table is live from the latest run (`r snap$run_date[1]`), and notes come from the comments in packages.yml. Click a package for its CRAN or r-universe page. All columns are on the [Radar](index.html), and [How to judge a package](judge.html) explains how to read them.
+
+Guides marked [draft]{.flag} haven't been reviewed by a human yet.
+
+```{r}
+#| results: asis
+watch |>
+  distinct(theme) |>
+  pull() |>
+  walk(\(th) {
+    guide <- read_guide("../guides", th)
+    theme_note <- notes |> filter(theme == th, is.na(package)) |> pull(note)
+
+    rows <- watch |>
+      filter(theme == th) |>
+      select(package) |>
+      left_join(snap, by = "package") |>
+      left_join(notes |> filter(theme == th, !is.na(package)) |> select(package, note), by = "package") |>
+      arrange(desc(ru_score)) |>
+      transmute(
+        Package  = md_pkg(package, link),
+        Status   = status,
+        Score    = if_else(is.na(ru_score), "", format(round(ru_score, 1), nsmall = 1)),
+        `DLs/yr` = fmt_short(dl_365),
+        Deps     = if_else(is.na(deps_n), "", glue("{deps_n} ({deps_compiled_n} compiled)")),
+        Flags    = coalesce(flags, ""),
+        Note     = coalesce(note, "")
+      )
+
+    cat("\n\n## ", th, if (guide$draft) " [draft]{.flag}", "\n\n", sep = "")
+    if (length(theme_note)) cat("_", theme_note, "_\n\n", sep = "")
+    cat(if (is.null(guide$text)) "_No guide yet._" else guide$text, sep = "\n")
+    cat("\n\n")
+    print(knitr::kable(rows, format = "pipe"))
+    cat(glue("\n\n[Edit this guide](https://github.com/{repo}/edit/main/guides/{theme_slug(th)}.md)\n\n"))
+  })
+```

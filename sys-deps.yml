@@ -1,6 +1,12 @@
-compile-only:
+# System libraries to watch for -------------------------------------------------
+# A package gets the `watch-sysreq` flag when it, or any of its recursive
+# (Depends/Imports/LinkingTo) dependencies, needs one of these. Matching is a
+# case-insensitive whole-word match against DESCRIPTION SystemRequirements
+# and the libraries r-universe detects at link time.
+# Handy for locked-down k8s / JupyterHub images where you can't apt-get.
+
+compile-only: # only needed to build from source
   - cmake
 
-run:
+run: # needed at runtime too
   - libxml2
-  
