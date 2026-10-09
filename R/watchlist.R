@@ -37,3 +37,21 @@ read_sys_watch <- function(path) {
   if (!file.exists(path)) return(character())
   read_yaml(path) |> unlist(use.names = FALSE) |> unique()
 }
+
+# The "# ..." comments in packages.yml (read_yaml() drops them) -> one row per
+# commented entry or theme: theme, package (NA for a theme-level note), note
+read_watch_notes <- function(path) {
+  tibble(line = readLines(path, warn = FALSE)) |>
+    mutate(
+      theme = str_match(line, "^([^\\s#-][^:#]*):")[, 2],
+      entry = str_match(line, "^\\s+-\\s+(.+?)\\s+#")[, 2],
+      note  = str_match(line, "\\s#\\s*(.+?)\\s*$")[, 2]
+    ) |>
+    fill(theme) |>
+    filter(!is.na(note), !is.na(entry) | !is.na(str_match(line, "^[^\\s#]")[, 1])) |>
+    mutate(package = map_chr(entry, \(e) if (is.na(e)) NA_character_ else parse_entry(yaml.load(e))$package)) |>
+    select(theme, package, note)
+}
+
+# "lint/style" -> "lint-style": file name for guides/<slug>.md
+theme_slug <- function(theme) theme |> str_to_lower() |> str_replace_all("[^a-z0-9]+", "-") |> str_remove_all("^-|-$")

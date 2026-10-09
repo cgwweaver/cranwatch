@@ -55,3 +55,25 @@ test_that("cached_get reuses a fresh file without touching the network", {
   Sys.setFileTime(path, Sys.time() - 48 * 3600)
   expect_error(cached_get(url, dir = dir))       # stale: tries the network
 })
+
+test_that("YAML comments become per-entry and per-theme notes", {
+  path <- tempfile(fileext = ".yml")
+  writeLines(c(
+    "# file header, ignored",
+    "pipelines: # see targetopia",
+    "  - targets",
+    "  - igraph # dep for targets",
+    "  - {pkg: polars, repo: pola-rs/r-polars} # not on CRAN",
+    "  - cmmr/jobqueue # gh"
+  ), path)
+  expect_equal(
+    read_watch_notes(path),
+    tibble(theme = "pipelines", package = c(NA, "igraph", "polars", "jobqueue"),
+           note = c("see targetopia", "dep for targets", "not on CRAN", "gh"))
+  )
+  expect_equal(theme_slug(c("lint/style", "dplyr backends", "data-cleaning")), c("lint-style", "dplyr-backends", "data-cleaning"))
+})
+
+test_that("fmt_short rounds each value on its own", {
+  expect_equal(fmt_short(c(4890, 209, 39438, 1234567, 12, NA)), c("4.9K", "210", "39K", "1.2M", "12", ""))
+})

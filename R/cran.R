@@ -113,7 +113,7 @@ sysreq_items <- function(db) {
     transmute(package = Package, item = split_sysreqs(SystemRequirements)) |>
     unnest_longer(item) |>
     mutate(
-      name     = item |> str_remove("\\s*[(\\[:].*$") |> str_squish(),
+      name     = item |> str_remove("\\s*[(\\[:].*$") |> str_squish() |> str_trunc(40), # some are whole sentences
       optional = str_detect(item, "(?i)optional")
     ) |>
     filter(name != "", !str_detect(name, settings$sysreq_noise))

@@ -4,7 +4,9 @@
 
 Health radar for the R packages I use, or am eyeing, at work: how popular they are, whether CRAN is about to archive them, and how painful they are to install somewhere locked down (air-gapped k8s, source-only mirror, no `apt-get`).
 
-**Site → <https://cgwweaver.github.io/cranwatch/>** · [columns & sources](https://cgwweaver.github.io/cranwatch/about.html) · [latest CSV](data/latest.csv)
+**Site → <https://cgwweaver.github.io/cranwatch/>**: [Radar](https://cgwweaver.github.io/cranwatch/) (the table) · [Themes](https://cgwweaver.github.io/cranwatch/themes.html) (what each group of packages is for and what to pick) · [How to judge a package](https://cgwweaver.github.io/cranwatch/judge.html) · [Columns & sources](https://cgwweaver.github.io/cranwatch/about.html) · [latest CSV](data/latest.csv)
+
+Written for colleagues in a stats office moving from SAS to R, but the method works for anyone's package list.
 
 ## What it tracks
 
@@ -37,8 +39,9 @@ Monday 06:17 UTC (or push / manual run)
 
 ## Editing the watchlist
 
-[`packages.yml`](packages.yml): one key per theme. Entries can be `dplyr`, `owner/repo`, or `{pkg: polars, repo: pola-rs/r-polars}`. Push and the workflow re-runs.
-Things that aren't packages go in [`links.yml`](links.yml).
+- [`packages.yml`](packages.yml): one key per theme. Entries can be `dplyr`, `owner/repo`, or `{pkg: polars, repo: pola-rs/r-polars}`. A trailing `# comment` shows up as that package's note on the site. Push and the workflow re-runs.
+- [`guides/<theme>.md`](guides/): the text on the Themes page, plain markdown. Delete the `status: draft` line once a guide has been reviewed and the "draft" badge disappears.
+- [`links.yml`](links.yml): things that aren't packages.
 
 ## One-time setup
 
@@ -58,11 +61,12 @@ quarto::quarto_render("site")                       # or: quarto render site
 
 | Path | What |
 |---|---|
-| `packages.yml`, `links.yml`, `sys-deps.yml` | Config: watchlist, non-package links, system libs to flag |
+| `packages.yml`, `links.yml`, `sys-deps.yml` | Config: watchlist (+ notes as comments), non-package links, system libs to flag |
+| `guides/` | One markdown guide per theme, shown on the Themes page |
 | `run.R` | Entry point |
 | `R/` | Pipeline: `cran.R`, `runiverse.R`, `cranlogs.R`, `github.R` (fetch + metrics per source), `build.R` (status/flags), `alerts.R`, `schema.R` (snapshot columns), `main.R` |
 | `tests/testthat/` | Offline tests: unit tests + the full pipeline on fake sources |
-| `site/` | Quarto site (reactable table, movers, links) |
+| `site/` | Quarto site: Radar (reactable table), Themes, How to judge a package, Columns & sources |
 | `data/` | Snapshots, written by the workflow |
 | `IDEAS.txt` | Scratchpad |
 

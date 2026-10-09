@@ -14,7 +14,6 @@ run   <- read_json("../data/run.json")
 links <- read_yaml("../links.yml")
 repo  <- Sys.getenv("GITHUB_REPOSITORY", "cgwweaver/cranwatch")
 
-short     <- \(x) if_else(is.na(x), "", scales::label_number(scale_cut = scales::cut_short_scale())(signif(x, 2)))
 failed    <- run$sources |> keep(\(s) !isTRUE(s$ok)) |> names()
 sources   <- if (length(failed)) paste("**FAILED:**", paste(failed, collapse = ", ")) else "all ok"
 note      <- \(l) if (is.null(l$note)) "" else paste0(": ", l$note)
@@ -35,13 +34,18 @@ if (nrow(alerts)) {
 
 ```{r}
 #| column: screen-inset
+notes <- read_watch_notes("../packages.yml") |>
+  filter(!is.na(package)) |>
+  summarise(notes = paste(unique(note), collapse = "; "), .by = package)
+
 tbl <- snap |>
+  left_join(notes, by = "package") |>
   select(
     package, title, link, themes, status,
     ru_score, dl_365, dl_growth, ru_stars, ru_dependents,
     deadline, archived_n, archived_last, cran_comment,
     needs_compilation, deps_n, deps_compiled_n, sysreqs, sysreqs_via_deps, sysdeps_detected,
-    revdeps_n, revdeps_top, flags
+    revdeps_n, revdeps_top, flags, notes
   )
 
 hidden <- c("title", "link", "archived_last", "cran_comment", "sysreqs_via_deps", "sysdeps_detected")
@@ -82,10 +86,10 @@ reactable(
       ru_score      = colDef(name = "Score", cell = \(value, i) {
         if (is.na(value)) "" else span(title = score_tip[i], class = if (nzchar(score_tip[i])) "has-tip", format(round(value, 1), nsmall = 1))
       }),
-      dl_365        = colDef(name = "DLs/yr", cell = short),
+      dl_365        = colDef(name = "DLs/yr", cell = fmt_short),
       dl_growth     = colDef(name = "vs prev", format = colFormat(percent = TRUE, digits = 0)),
-      ru_stars      = colDef(name = "Stars", cell = short),
-      ru_dependents = colDef(name = "Used by", minWidth = 80, cell = short),
+      ru_stars      = colDef(name = "Stars", cell = fmt_short),
+      ru_dependents = colDef(name = "Used by", minWidth = 80, cell = fmt_short),
       deadline      = colDef(name = "Deadline", minWidth = 100, cell = \(value) if (is.na(value)) "" else span(class = "bad", format(value))),
       archived_n    = colDef(name = "Archived", minWidth = 100, cell = \(value, i) {
         if (is.na(value) || value == 0) return("")
@@ -105,7 +109,8 @@ reactable(
       }),
       revdeps_n   = colDef(name = "Direct"),
       revdeps_top = colDef(name = "Top by score", minWidth = 220),
-      flags       = colDef(name = "Flags", minWidth = 160, cell = flag_badges)
+      flags       = colDef(name = "Flags", minWidth = 160, cell = flag_badges),
+      notes       = colDef(name = "Notes", minWidth = 200)
     )
   )
 )

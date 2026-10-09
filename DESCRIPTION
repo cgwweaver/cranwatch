@@ -23,6 +23,5 @@ Config/Needs/site:
     htmltools,
     knitr,
     reactable,
-    rmarkdown,
-    scales
+    rmarkdown
 Encoding: UTF-8
