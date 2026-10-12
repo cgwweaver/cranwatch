@@ -1,0 +1,106 @@
+{
+  "run_date": "2026-10-12",
+  "run_time": "2026-10-12 03:30:59 UTC",
+  "previous": {},
+  "dl_windows": {
+    "dl_365": ["2025-10-11", "2026-10-10"],
+    "dl_prev365": ["2024-10-11", "2025-10-10"]
+  },
+  "n_packages": 163,
+  "sources": {
+    "cran_db": {
+      "ok": true,
+      "secs": 1.9
+    },
+    "cran_in": {
+      "ok": true,
+      "secs": 0.4
+    },
+    "ru_index": {
+      "ok": true,
+      "secs": 35.5
+    },
+    "ru_detail": {
+      "ok": true,
+      "secs": 17.9,
+      "formula_match": 1
+    },
+    "ru_sysdeps": {
+      "ok": true,
+      "secs": 0.8
+    },
+    "downloads": {
+      "ok": true,
+      "secs": 10.1
+    },
+    "github": {
+      "ok": true,
+      "secs": 3.7
+    }
+  },
+  "requests": {
+    "sent": {
+      "cloud.r-project.org": 2,
+      "r-universe.dev": 7,
+      "cran.r-universe.dev": 18,
+      "cynkra.r-universe.dev": 1,
+      "tgerke.r-universe.dev": 1,
+      "cmmr.r-universe.dev": 1,
+      "data-cleaning.r-universe.dev": 1,
+      "rpolars.r-universe.dev": 1,
+      "yihui.r-universe.dev": 1,
+      "rdatatable.r-universe.dev": 1,
+      "rstudio.r-universe.dev": 1,
+      "tidyverse.r-universe.dev": 1,
+      "r-lib.r-universe.dev": 1,
+      "tidymodels.r-universe.dev": 1,
+      "jeroen.r-universe.dev": 1,
+      "igraph.r-universe.dev": 1,
+      "apache.r-universe.dev": 1,
+      "kassambara.r-universe.dev": 1,
+      "r-dbi.r-universe.dev": 1,
+      "ycphs.r-universe.dev": 1,
+      "haozhu233.r-universe.dev": 1,
+      "sfirke.r-universe.dev": 1,
+      "ddsjoberg.r-universe.dev": 1,
+      "ropensci.r-universe.dev": 1,
+      "easystats.r-universe.dev": 1,
+      "harrelfe.r-universe.dev": 1,
+      "daroczig.r-universe.dev": 1,
+      "fastverse.r-universe.dev": 1,
+      "duckdb.r-universe.dev": 1,
+      "janmarvin.r-universe.dev": 1,
+      "hadley.r-universe.dev": 1,
+      "zatonovo.r-universe.dev": 1,
+      "rcppcore.r-universe.dev": 1,
+      "gergness.r-universe.dev": 1,
+      "r-forge.r-universe.dev": 1,
+      "vincentarelbundock.r-universe.dev": 1,
+      "qsbase.r-universe.dev": 1,
+      "trinker.r-universe.dev": 1,
+      "fstpackage.r-universe.dev": 1,
+      "klmr.r-universe.dev": 1,
+      "juba.r-universe.dev": 1,
+      "eddelbuettel.r-universe.dev": 1,
+      "posit-dev.r-universe.dev": 1,
+      "yixuan.r-universe.dev": 1,
+      "wlandau.r-universe.dev": 1,
+      "mayoverse.r-universe.dev": 1,
+      "wrathematics.r-universe.dev": 1,
+      "markstevenson1.r-universe.dev": 1,
+      "markfairbanks.r-universe.dev": 1,
+      "jabiru.r-universe.dev": 1,
+      "dbosak01.r-universe.dev": 1,
+      "miachol.r-universe.dev": 1,
+      "alinamateikondylis.r-universe.dev": 1,
+      "andrie.r-universe.dev": 1,
+      "daranzolin.r-universe.dev": 1,
+      "gvelasq.r-universe.dev": 1,
+      "gabrielrvsc.r-universe.dev": 1,
+      "jmping.r-universe.dev": 1,
+      "cranlogs.r-pkg.org": 6,
+      "api.github.com": 8
+    },
+    "from_cache": []
+  }
+}
