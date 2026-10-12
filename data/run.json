@@ -1,6 +1,6 @@
 {
   "run_date": "2026-10-12",
-  "run_time": "2026-10-12 03:30:59 UTC",
+  "run_time": "2026-10-12 12:51:10 UTC",
   "previous": {},
   "dl_windows": {
     "dl_365": ["2025-10-11", "2026-10-10"],
@@ -10,28 +10,28 @@
   "sources": {
     "cran_db": {
       "ok": true,
-      "secs": 1.9
+      "secs": 0.9
     },
     "cran_in": {
       "ok": true,
-      "secs": 0.4
+      "secs": 0.2
     },
     "ru_index": {
       "ok": true,
-      "secs": 35.5
+      "secs": 2.3
     },
     "ru_detail": {
       "ok": true,
-      "secs": 17.9,
+      "secs": 1,
       "formula_match": 1
     },
     "ru_sysdeps": {
       "ok": true,
-      "secs": 0.8
+      "secs": 0.1
     },
     "downloads": {
       "ok": true,
-      "secs": 10.1
+      "secs": 0
     },
     "github": {
       "ok": true,
@@ -40,6 +40,9 @@
   },
   "requests": {
     "sent": {
+      "api.github.com": 8
+    },
+    "from_cache": {
       "cloud.r-project.org": 2,
       "r-universe.dev": 7,
       "cran.r-universe.dev": 18,
@@ -98,9 +101,7 @@
       "gvelasq.r-universe.dev": 1,
       "gabrielrvsc.r-universe.dev": 1,
       "jmping.r-universe.dev": 1,
-      "cranlogs.r-pkg.org": 6,
-      "api.github.com": 8
-    },
-    "from_cache": []
+      "cranlogs.r-pkg.org": 6
+    }
   }
 }
