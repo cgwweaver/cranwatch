@@ -1,0 +1,117 @@
+---
+title: "Columns & sources"
+---
+
+```{r}
+#| include: false
+for (f in list.files("../R", pattern = "\\.R$", full.names = TRUE)) source(f)
+snap <- read_snapshot("../data/latest.csv")
+run  <- read_json("../data/run.json")
+repo <- gh_repo # from R/settings.R
+sent   <- unlist(run$requests$sent %||% list())
+cached <- unlist(run$requests$from_cache %||% list())
+```
+
+## What's tracked
+
+One row per package in [`packages.yml`](https://github.com/`r repo`/blob/main/packages.yml), refreshed every Monday by GitHub Actions. Each run writes a dated snapshot to [`data/snapshots/`](https://github.com/`r repo`/tree/main/data/snapshots), so trends build up over time.
+
+| Column | Meaning | Source |
+|---|---|---|
+| **Status** | Where you can install it from today: `base` (ships with R) · `cran` · `r-universe` (not on CRAN, e.g. polars) · `cran-archived` (gone) · `github` (repo only) · `not-found` · `unknown` (a lookup API was down) | all |
+| **Score** | The r-universe score, which r-universe uses to rank search results. Hover for what it's made of (formula below) | r-universe |
+| **Stars**, **Used by** | GitHub stars; packages across r-universe that depend on it, directly or indirectly | r-universe |
+| more in the CSV | scripts, monthly downloads, weeks with commits, commits, contributors, vignettes, releases, mentions | r-universe |
+| **DLs/yr**, vs prev | Downloads over the last 365 days vs the 365 before | cranlogs |
+| **Deadline** | CRAN asked the maintainer to fix check problems by this date or the package gets archived | CRAN package db |
+| **Archived** | Distinct "Archived on" events in CRAN's notes. Hover for CRAN's latest comment | CRAN `PACKAGES.in` + package db |
+| **Compiles** | `NeedsCompilation: yes`: needs a compiler when installed from source | CRAN package db |
+| **Deps** | Recursive Depends/Imports/LinkingTo, base R excluded: what a fresh install pulls in | CRAN package db |
+| **Compiled** | How many of those deps need compiling. Matters on source-only mirrors | CRAN package db |
+| **System reqs** | Its own `SystemRequirements` (optional ones say so). "via deps" = ones its dependencies bring in, e.g. `libxml2 [igraph]` for targets. "links" = libraries r-universe saw it (or its deps) link against | CRAN package db, r-universe `/api/sysdeps` |
+| **Reverse deps: Direct** | CRAN packages that Depend on, Import or LinkTo it | CRAN package db |
+| **Top by score** | Its top 3 direct reverse deps by r-universe score, shown only when at least 3 score above 10 | CRAN + r-universe |
+| **Flags** | `deadline` · `archived` (off CRAN, was on it) · `orphaned` (CRAN maintainer = ORPHANED) · `archived-past-yr` (archived then back within a year) · `new-past-yr` (no downloads the year before) · `not-found` · `gh-archived` · `watch-sysreq` (needs a library from [`sys-deps.yml`](https://github.com/`r repo`/blob/main/sys-deps.yml)) | derived |
+
+## Alerts
+
+When a package gets a CRAN **deadline**, is **archived** (in the past year) or **orphaned**, can't be **found**, or its GitHub repo is **archived**, the workflow keeps a single issue labelled `cranwatch-alert` up to date and closes it when nothing is flagged.
+
+- **New alerts** get a comment that @mentions the repo owner (= an email).
+- **Each alert is announced once.** [`data/alerts.csv`](https://github.com/`r repo`/blob/main/data/alerts.csv) remembers what was announced. A complete run forgets alerts that are no longer flagged, so they're announced again if they come back.
+- **If a data source fails**, the run is *partial*. Only alerts that come from CRAN's own data (deadline, orphaned, archived) are announced; the others wait for the next complete run, and the issue isn't closed.
+
+## The r-universe score
+
+From `calculate_score()` in [`r-universe-org/frontend/routes/packages.js`](https://github.com/r-universe-org/frontend/blob/master/routes/packages.js). Every ingredient is put on a log10 scale and weighted relative to GitHub stars, so 10 stars = 1 point, 100 stars = 2 points, 1000 = 3:
+
+```
+score = 1 + sum over ingredients of log10(max(1, x))
+```
+
+| Ingredient `x` | Comment in their source |
+|---|---|
+| GitHub stars | the yardstick |
+| 3 × packages using it (recursive) | one revdep ≈ 3 stars |
+| GitHub scripts that load it ÷ 10 | 10 scripts ≈ 1 star |
+| 10 × vignettes | one vignette ≈ 10 stars |
+| weeks with commits in the past year | |
+| contributors − 1 | |
+| 10 if on CRAN/Bioconductor | ≈ 10 stars |
+| 5 if it has a README | ≈ 5 stars |
+| monthly downloads ÷ 1000 | 1000 downloads ≈ 1 star |
+| min(mentions, 10) | capped: false positives |
+
+```{r}
+#| results: asis
+ex <- snap |> filter(!is.na(ru_update_weeks)) |> slice_max(ru_score, n = 1, with_ties = FALSE)
+if (nrow(ex)) {
+  parts <- ru_score_parts(ex, "ru_") |> unlist() |> round(2) |> keep(\(p) p > 0)
+  cat(glue("**Example: {ex$package}** scores {round(ex$ru_score, 1)} = 1 + "),
+      paste(glue("{parts} ({names(parts)})"), collapse = " + "), "\n\n")
+}
+match <- run$sources$ru_detail$formula_match
+if (is.numeric(match) && length(match) == 1 && is.finite(match)) cat(glue("This copy of the formula reproduces r-universe's own score for {round(100 * match)}% of the watched packages in the latest run (<100% would mean they changed it)."), "\n\n")
+```
+
+Two things worth knowing:
+
+- Because everything is logged, **one big ingredient can't dominate**. Going from 1k to 10k stars adds the same single point as going from 10 to 100.
+- Datasets are meant to count, but a bug in their code (`Array.isArray(description._datasets * 5)`) means they never do.
+
+r-universe calls the formula a work in progress, so use the separate ingredients for trends, not the score.
+
+## Data sources, and being a polite client
+
+| Source | What | Requests per run |
+|---|---|---|
+| CRAN [`web/packages/packages.rds`](https://cloud.r-project.org/web/packages/packages.rds) | Every current package's DESCRIPTION + CRAN fields (Deadline, X-CRAN-Comment). Same file `tools::CRAN_package_db()` reads | 1 (~12 MB) |
+| CRAN [`src/contrib/PACKAGES.in`](https://cloud.r-project.org/src/contrib/PACKAGES.in) | CRAN's notes incl. archived packages ("Archived on … as …") | 1 (~2 MB) |
+| r-universe [`/api/search`](https://docs.r-universe.dev/browse/api.html) (no query) | Score, recursive dependents, scripts, stars and home universe for every package. Global index first, then the cran universe's for CRAN packages global search leaves out | ~7 + ~6 pages of 5000 |
+| r-universe [`<universe>/api/packages?fields=…`](https://docs.r-universe.dev/browse/api.html) | The score's ingredients, only the fields needed | 1 per universe hosting a watched package (~55), + 1 per package that listing misses (~10) |
+| r-universe `cran/api/sysdeps` | System library → packages linking it | 1 |
+| [cranlogs](https://github.com/metacran/cranlogs.app) `/downloads/total/<from>:<to>/<pkgs>` | Download totals | 2 per 50 packages (~8) |
+| GitHub API | Stars / last push / archived, only for repos not found elsewhere | ≤ 2 per repo |
+
+```{r}
+#| results: asis
+hosts <- \(x) if (!length(x)) "" else paste0(" (", paste(glue("{names(x)}: {x}"), collapse = ", "), ")")
+if (!is.null(run$requests)) cat(glue(
+  "**Latest run ({run$run_date}):** {sum(sent)} request{if (sum(sent) == 1) '' else 's'} sent{hosts(sent)}, {sum(cached)} answered from the disk cache."
+), "\n\n")
+```
+
+CRAN, r-universe and cranlogs publish no rate limit and need no authentication. The GitHub API allows 1000 requests/hour with the token GitHub Actions provides. cranwatch stays far below all of them:
+
+- **Bulk endpoints**: one week's run, about 90 requests, covers 160+ watched packages plus scores for every package on r-universe (~31k).
+- **A disk cache**: every response except GitHub's is kept for `r settings$cache_hours` hours and carried between CI runs, so pushes and re-runs in between don't touch the APIs at all.
+- **Identifies itself**: User-Agent `r settings$user_agent`.
+- **Spaced out**: requests go one at a time, at least `r 1 / settings$max_req_per_sec` s apart per host. It backs off and retries on 429 (too many requests) and 5xx (server trouble).
+- **CRAN files come from the CDN** (`cloud.r-project.org`), not the main Vienna server.
+
+## Caveats
+
+- **Downloads** come only from Posit's `cloud.r-project.org` mirror and include CI/bot installs. Compare packages relative to each other; don't read them as user counts.
+- **Deadline history** isn't published by CRAN, so "had a deadline before" only builds up from the first snapshot on.
+- **`NeedsCompilation` and system requirements** matter most when installing from **source**, e.g. an air-gapped Artifactory CRAN mirror with no Linux binaries.
+- GitHub-only packages have no CRAN fields (deadline, deps, compile info).

@@ -1,10 +1,22 @@
+# cranwatch watchlist ----------------------------------------------------------
+# One key per theme. A package can sit under several themes.
+#
+# Entry forms:
+#   - dplyr                                   # package name (CRAN, archived CRAN, or r-universe)
+#   - owner/repo                              # GitHub-hosted; package name = repo name
+#   - {pkg: polars, repo: pola-rs/r-polars}   # package name differs from repo name
+#
+# Lookup order: base R -> CRAN -> r-universe -> CRAN archive -> GitHub repo -> "not-found"
+# ("unknown" if a lookup API was down). CRAN deadlines are tracked automatically.
+# "# ?" = couldn't confirm it exists; the first run will tell (status / not-found).
+# Non-packages (CLIs, books, course repos) and unidentified names live in links.yml.
+
 packages:
   - renv
   - remotes
   - box
   - pak
   - pacman
-  - rig
   - packrat
 
 meta-code:
@@ -15,19 +27,17 @@ meta-code:
   - callr
   - withr
   - testthat
-  - vdiffr # testthat like but visual? 
-  - os # os eg copy?
-  - fs # file sys eg copy?
-  - ps
+  - vdiffr # testthat snapshot tests, for plots
+  - fs # file system ops eg copy
+  - ps # processes
   - cli
-  - crayon # tidyverse cli colour?
-  - pillar # for tibble
+  - crayon # terminal colours; superseded by cli
+  - pillar # printing for tibble
   - hms
   - vctrs
-  - funs
   - scales
-  - stats4
-  - tcltk
+  - stats4 # base R
+  - tcltk # base R
   - RSQLite
   - lifecycle
   - assertthat
@@ -35,14 +45,13 @@ meta-code:
 
 lint/style:
   - lintr
-  - stylr # exists?
-  - styler # exists?
+  - styler
 
 log:
   - logger
   - futile.logger
   - logr
-  - progressr #*
+  - progressr
 
 timing/measuring:
   - lobstr
@@ -52,22 +61,21 @@ timing/measuring:
 pipelines:
   - targets
   - tarchetypes
-  - targetopia
   - sqltargets
-  - igraph # dep for targets. (same maintainer as duckdb) CRAN deadline...
-  - crew #*
+  - igraph # dep for targets. (same maintainer as duckdb)
+  - crew
 
 parallel:
   - future
   - futurize
   - furrr
   - mirai
-  - crew #*
+  - crew
   - parallelly
   - promises
-  - progressr #*
-  - interprocess # gh...
-  - jobqueue # gh...
+  - progressr
+  - cmmr/interprocess # on CRAN too
+  - cmmr/jobqueue # on CRAN too
 
 dplyr backends:
   - dbplyr # only one that does remote (Oracle etc)?
@@ -77,53 +85,52 @@ dplyr backends:
 
 big data:
   - data.table
-  - polars
-  - duckdb # CRAN deadline...
-  - arrow #*
-  - tidytables
+  - {pkg: polars, repo: pola-rs/r-polars} # not on CRAN (r-universe / R-multiverse)
+  - duckdb
+  - arrow
+  - tidytable # was "tidytables"
 
 read-write:
-  - qs # depr?
+  - qs # superseded by qs2
   - qs2
   - RcppParallel # dep for qs2
   - RcppTOML
   - nanoparquet # tidyverse!
   - fst
-  - arrow #*
+  - arrow
   - vroom # tidyverse!
 
 surveys:
-  - surveyanalaysis
+  - surveyanalysis # ? was "surveyanalaysis"; not on CRAN. compare w gest?!
   - srvyr
   - survey
   - sampling
   - anesrake
-  - weighting
+  - weighting # ? not on CRAN; GitHub owner unknown
   - Hmisc
   - surveydata
   - questionr
-  - sae # cran deadline...
+  - sae
 
 epi:
   - epiR
-  - epitools # CRAN deadline...
+  - epitools
 
 tables: # https://github.com/sfirke/packagemetrics/blob/master/README_files/figure-markdown_github/unnamed-chunk-3-1.png
   - gt
   - gtable
   - knitr
   - kableExtra
-  - rmarkdown # ?
+  - rmarkdown
   - gtsummary
   - modelsummary
   - sjPlot
-  - tidytab
-  - janitor #*
-  - tabyl   #*
-  - arsenal # cran deatline...
+  - tidytab # ? not on CRAN
+  - janitor # tabyl()
+  - arsenal
 
 plots:
-  - ggarrange
+  - ggpubr # ggarrange()
   - gridExtra
 
 easystats:
@@ -142,98 +149,78 @@ tidymodels:
   - tidymodels
   - rsample
   - recipes
-  - parsnip # CRAN deadline...
+  - parsnip
   - yardstick
   - workflows
   - tune
   - dials
   - infer
   - broom
-  - modeldb     # GH
-  - tidypredict # GH. cran deadline...
-  - lorax       # GH
+  - modeldb # on CRAN + GH
+  - tidypredict # on CRAN + GH.
+  - lorax # on CRAN + GH
 
 xlsx:
   - readxl
   - openxlsx
   - openxlsx2
-  - writexl   # ?
+  - writexl
 
-data-cleaning/:
-  - book
-  - IW2024
-  - datacleaning
-  - data.log
+data-cleaning: # github.com/data-cleaning (Statistics Netherlands folks)
   - validate
-  - validate.viz
-  - validatereport
-  - ValidatReport
+  - data-cleaning/validate.viz
+  - data-cleaning/validatereport
   - validatedb
-  - validaterules
   - validatetools
-  - valedatesuggest
+  - data-cleaning/validatesuggest # was "valedatesuggest"
   - errorlocate
-  - editrules
+  - editrules # superseded by validate
   - dcmodify
   - dcmodifydb
   - deductive
   - deducorrect
-  - deriverules
-  - drat
+  - data-cleaning/deriverules
+  - data-cleaning/data.log
 
 dbplyr related:
-  - dbplyrExtra
-  - dbplyr_helpers
-  - demoadbcplyr
+  - dbplyrExtra # ? not found anywhere yet
   - halpo/pivot
-  - dabases-w-r
 
-github, data:
+databases: # was "github, data"
   - cynkra/dm
-  - intro-database-r
   - bigrquery
-  - r-polarssql
-  - oRm
-  - ducklake-r
-  - dplyneage
+  - {pkg: polarssql, repo: rpolars/r-polarssql}
+  - oRm # ? not on CRAN
+  - {pkg: ducklake, repo: tgerke/ducklake-r}
+  - tgerke/dplyneage
 
 llms:
-  - ellmer   # tidyverse!
+  - ellmer # tidyverse!
   - mcptools
   - shinychat
 
 other:
-  - config   # posit
-  - configr  # cran deadline...
-  - datadiff # Hadley
-  - janitor  #*
-  - tabyl    #*
-  - glue     # tidyverse!
+  - config # posit
+  - configr
+  - datadiff # CRAN one is ThinkR-open/datadiff (YAML rules), not Hadley's
+  - janitor
+  - glue # tidyverse!
   - magrittr # tidyverse!
-  - zeallot  # py multi assignment
-  - listenv  # auth same as future
+  - zeallot # py multi assignment
+  - listenv # auth same as future
   - collapse # fmedian
-  - tidyboot # ?
-  - modelr   # older (rsample newer) - but is tidyverse!
+  - tidyboot
+  - modelr # older (rsample newer) - but is tidyverse!
   - keyring
   - getPass
-  - oskey # ?
+  - oskey # ? not on CRAN
   - gert
-  - lambda.r # cran deadline...
+  - lambda.r
   - yaml
   - jsonlite
   - prettydoc
   - ArCo
-  - bslib # w shiny/for websites?
+  - bslib # w shiny/for websites
 
-no:
-  - stats::xtabs()
-
-
-# https://hadley.github.io/cran-deadlines/
-# https://github.com/sfirke/tidysurvey/issues
-
+# not tracking: stats::xtabs() (base R function)
 # imports vs depends: https://stackoverflow.com/questions/8637993/better-explanation-of-when-to-use-imports-depends
-# try run search()
-
-

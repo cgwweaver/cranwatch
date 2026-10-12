@@ -1,0 +1,126 @@
+name: cranwatch
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC (Sunday night in Calgary)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "packages.yml"
+      - "links.yml"
+      - "sys-deps.yml"
+      - "run.R"
+      - "R/**"
+      - "site/**"
+      - "guides/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - ".github/**"
+  pull_request: # dry run: fetch + render, no commit / issue / deploy
+    paths:
+      - "packages.yml"
+      - "links.yml"
+      - "sys-deps.yml"
+      - "run.R"
+      - "R/**"
+      - "site/**"
+      - "guides/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - ".github/**"
+
+permissions:
+  contents: write # commit snapshots
+  issues: write # alert issue
+  pages: write # deploy site
+  id-token: write # deploy site
+
+concurrency:
+  group: cranwatch-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ALERT_MENTION: ${{ github.repository_owner }}
+      PUBLISH: ${{ github.event_name != 'pull_request' }}
+    steps:
+      # Non-PR runs start from the branch tip, not the triggering commit, so a run
+      # queued behind another sees that run's data commit (PRs keep the merge ref)
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name != 'pull_request' && github.ref || '' }}
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          needs: site
+
+      # HTTP cache (see cached_get()): a re-run within cache_hours, e.g. on a
+      # push or this PR's dry run, re-reads files instead of re-hitting the APIs
+      - uses: actions/cache@v4
+        with:
+          path: _cache
+          key: cranwatch-http-${{ github.run_id }}
+          restore-keys: cranwatch-http-
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Unit tests (offline, fake sources)
+        run: Rscript -e 'testthat::test_dir("tests/testthat", stop_on_failure = TRUE)'
+
+      - name: Fetch sources, write snapshot + alerts
+        run: |
+          Rscript run.R
+          # one-line summary as a notice on the run page
+          jq -r '"sources: " + ([.sources | to_entries[] | "\(.key) \(if .value.ok then (if (.value.partial // .value.failed) then "partial" else "ok" end) else "FAILED" end)"] | join(", ")) + "; score formula match: \(.sources.ru_detail.formula_match // "n/a")"' data/run.json | sed 's/^/::notice title=cranwatch::/'
+
+      - name: Commit snapshot
+        if: env.PUBLISH == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then echo "No data changes"; exit 0; fi
+          git commit -m "data: snapshot $(date -u +%F)"
+          git pull --rebase -X theirs origin "$GITHUB_REF_NAME" # on conflict, this run's data wins
+          git push origin "HEAD:$GITHUB_REF_NAME"
+
+      - name: Sync alert issue
+        if: env.PUBLISH == 'true'
+        run: bash .github/scripts/sync-alert-issue.sh
+
+      - name: Render site
+        run: quarto render site
+
+      - uses: actions/upload-pages-artifact@v3
+        if: env.PUBLISH == 'true'
+        with:
+          path: site/_site
+
+      - uses: actions/upload-artifact@v4
+        if: env.PUBLISH != 'true'
+        with:
+          name: site-preview
+          path: |
+            site/_site
+            data
+            _alerts
+
+  deploy:
+    needs: update
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

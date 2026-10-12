@@ -1,0 +1,128 @@
+---
+title: "How to judge an R package"
+subtitle: "Five questions to ask before a production program depends on it"
+toc: true
+---
+
+```{r}
+#| include: false
+for (f in list.files("../R", pattern = "\\.R$", full.names = TRUE)) source(f)
+snap <- read_snapshot("../data/latest.csv")
+on_cran <- snap |> filter(status == "cran")
+repo <- gh_repo # from R/settings.R
+pkgs <- \(df) and_more(md_pkg(df$package, df$link))
+```
+
+<!-- status: draft — delete this line and the badge below once you've reviewed it -->
+[draft]{.flag} *First draft, not yet reviewed.*
+
+Adding a package to a script you run once is cheap. Adding it to a program that runs every month for years is a commitment. If the package disappears from CRAN, changes behaviour, or can't be installed on the server, the run breaks, usually on deadline day.
+
+None of the questions below has a single right answer, but each has signals you can check in a minute. The examples are live, from the `r nrow(snap)` packages on this site's watchlist (run of `r snap$run_date[1]`).
+
+## 1. Is it alive?
+
+Look at when it was last released, whether anyone has committed in the past year (*weeks with commits* in the CSV), and how many people contribute. A quiet package isn't necessarily dead: small, finished packages can go years without changes. But a quiet package *with problems* is.
+
+**CRAN deadlines are the early warning.** CRAN re-checks every package continually against new versions of R and of its dependencies. When a check breaks, the maintainer gets an email and a date, usually a few weeks out. If it isn't fixed by then, the package is **archived**: `install.packages()` stops finding it, and packages that require it can be archived too.
+
+```{r}
+#| results: asis
+dl <- on_cran |> filter(!is.na(deadline)) |> arrange(deadline)
+if (nrow(dl)) cat(glue("Right now **{nrow(dl)}** watched packages have a deadline: {pkgs(dl)} (earliest {min(dl$deadline)})."), "\n\n")
+ar <- snap |> filter(str_detect(coalesce(flags, ""), "(^|; )archived(;|$)"))
+if (nrow(ar)) cat(glue("Already off CRAN: {pkgs(ar)}."), "\n\n")
+back <- snap |> filter(status == "cran", archived_n > 0)
+if (nrow(back)) cat(glue("Archived at some point but back on CRAN: {pkgs(back)}. Not fatal, but worth knowing."), "\n\n")
+```
+
+Also bad: **orphaned** (CRAN lists no maintainer) and a GitHub repo marked **archived**.
+
+## 2. Can I install it *here*?
+
+On a laptop, CRAN hands you ready-built binaries for Windows and macOS. On a Linux server, especially one that only sees an internal mirror, you may only get **source** packages, which have to be compiled during installation. Two things then matter:
+
+- **Does it compile?** (`NeedsCompilation: yes`, the *Compiles* column.) You need compilers and headers, and big C++ packages can take a long time and a lot of memory to build.
+- **Does it need system libraries?** (*System reqs*.) Some packages need libraries from the operating system (libxml2, libcurl, GDAL, CMake…). R can't install those; someone has to add them to the server or container image. Ones marked *optional* only unlock extra features.
+
+The trap is that requirements are **inherited**: a package you pick can be pure R while something three levels down needs a C++ toolchain and libxml2.
+
+```{r}
+#| results: asis
+# clearest case: no requirements of its own, but one of ours (sys-deps.yml) arrives via a dependency
+via <- on_cran |>
+  filter(is.na(sysreqs), !is.na(sysreqs_watch), !is.na(sysreqs_via_deps)) |>
+  slice_min(str_count(sysreqs_via_deps, ";"), n = 1, with_ties = FALSE)
+if (nrow(via)) cat(glue("For example **{via$package}** declares no system requirements itself, yet its dependencies bring in: {via$sysreqs_via_deps}."), "\n\n")
+```
+
+`pak::pkg_sysreqs("pkg")` lists the OS packages to ask for. On the Radar, the *System reqs* column (own + via deps) and the `watch-sysreq` flag show the same thing at a glance; *Compiles* / *Compiled* show how much has to be built.
+
+## 3. How much does it drag in?
+
+Dependencies come in kinds:
+
+- **Depends** / **Imports**: installed with it and required.
+- **LinkingTo**: needed to compile it.
+- **Suggests**: optional, only for tests, vignettes or extra features.
+
+The *Deps* column counts the first three **recursively**, i.e. everything a fresh install pulls in (base R excluded).
+
+```{r}
+#| results: asis
+lean  <- on_cran |> filter(deps_n == 0) |> arrange(desc(ru_score))
+heavy <- on_cran |> slice_max(deps_n, n = 3, with_ties = FALSE)
+if (nrow(lean) && nrow(heavy)) cat(glue(
+  "Range on this watchlist: {nrow(lean)} packages need nothing else at all (e.g. {pkgs(head(lean, 4))}), ",
+  "while {pkgs(heavy)} pull in {and_more(heavy$deps_n, 3)} packages respectively."), "\n\n")
+```
+
+Every dependency is one more thing that can break, change or be archived. That's not a reason to avoid well-established ones, but it is a reason to:
+
+- install the specific pieces of a "meta-package" (tidymodels, easystats) rather than the whole bundle on a server;
+- think twice before taking a 60-package dependency for one helper function.
+
+## 4. Who else relies on it?
+
+**Reverse dependencies** are packages that depend on this one. Many reverse dependencies mean that when CRAN or R changes, breakage is noticed and fixed quickly, and that the maintainers are careful about breaking changes, because thousands of packages would notice.
+
+```{r}
+#| results: asis
+top <- on_cran |> slice_max(revdeps_n, n = 3, with_ties = FALSE)
+if (nrow(top)) cat(glue("On this watchlist, {pkgs(top)} have the most direct reverse dependencies on CRAN ({and_more(top$revdeps_n, 3)})."), "\n\n")
+```
+
+The *Top by score* column shows which well-known packages build on it. It's a quick sense of who else would be in trouble if it broke.
+
+## 5. Is it popular, and does that matter?
+
+- **Downloads** come from one CRAN mirror (Posit's) and include automated installs by CI systems. They're useful to compare packages with each other and to see momentum (*vs prev* year), but they aren't a user count.
+- **The r-universe score** blends GitHub stars, reverse dependencies, scripts that use it, vignettes, recent activity, contributors and downloads, each on a log scale ([details](about.html#the-r-universe-score)). It measures *visibility and ecosystem weight*, not code quality. A small, perfect package for one niche task can score low.
+
+```{r}
+#| results: asis
+grow <- on_cran |> filter(dl_prev365 > 10000) |> slice_max(dl_growth, n = 3, with_ties = FALSE)
+if (nrow(grow)) cat(glue("Fastest growing here (downloads vs the year before): {pkgs(grow)}."), "\n\n")
+```
+
+## Checklist
+
+| | Fine | Look closer | Think hard |
+|---|---|---|---|
+| **Alive** | release or commits in the past year | quiet for years, but no problems | CRAN deadline, archived, orphaned |
+| **Install** | pure R, or binaries available | compiles, no system libraries | needs system libraries your server lacks |
+| **Footprint** | a handful of dependencies | 20–50 | 50+ for a small job |
+| **Community** | many reverse dependencies | a few | none, single maintainer, no tests |
+
+And one rule that beats the checklist: **write down why you chose it**. A one-line comment in the project (or in a watchlist like [this one](https://github.com/`r repo`/blob/main/packages.yml)) saves the next person the same research.
+
+## Track your own list
+
+This site is a GitHub repository plus a weekly GitHub Action:
+
+1. Fork [`r repo`](https://github.com/`r repo`).
+2. In the fork: **Actions** tab → enable workflows; **Settings → Pages** → Source: GitHub Actions; **Settings → General → Features** → tick Issues (for the alert issue).
+3. In `site/_quarto.yml`, change `site-url`, `repo-url` and the GitHub link to your fork (the R code picks up the repo name by itself).
+4. Edit `packages.yml` and push. The workflow runs, commits a snapshot and publishes the site.
+
+It's all R, and readable. The code is in `R/`, one file per data source.

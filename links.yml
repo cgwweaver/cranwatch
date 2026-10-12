@@ -1,0 +1,27 @@
+# Things that aren't R packages, plus names I couldn't identify yet.
+# Shown as link lists on the site; not tracked by the pipeline.
+
+links:
+  - {name: rig, theme: packages, url: "https://github.com/r-lib/rig", note: "R installation manager (CLI, not an R package)"}
+  - {name: targetopia, theme: pipelines, url: "https://wlandau.github.io/targetopia/", note: "targets ecosystem overview"}
+  - {name: book, theme: data-cleaning, url: "https://github.com/data-cleaning/book", note: "Statistical Data Cleaning with Applications in R"}
+  - {name: IW2024, theme: data-cleaning, url: "https://github.com/data-cleaning/IW2024", note: "course material"}
+  - {name: datacleaning, theme: data-cleaning, url: "https://github.com/data-cleaning/datacleaning", note: "shell script that installs the data-cleaning packages"}
+  - {name: ValidatReport, theme: data-cleaning, url: "https://github.com/data-cleaning/ValidatReport", note: "ESS validation report standard (TeX, not a package)"}
+  - {name: drat, theme: data-cleaning, url: "https://github.com/data-cleaning/drat", note: "beta versions of the data-cleaning packages"}
+  - {name: cran-deadlines, url: "https://hadley.github.io/cran-deadlines/", note: "current CRAN deadlines"}
+  - {name: cran-downloads, url: "https://github.com/hadley/cran-downloads", note: "Shiny app for download stats"}
+  - {name: packagemetrics, url: "https://github.com/sfirke/packagemetrics", note: "package comparison metrics"}
+  - {name: tidysurvey issues, url: "https://github.com/sfirke/tidysurvey/issues"}
+  - {name: METACRAN services, url: "https://www.r-pkg.org/services", note: "crandb, cranlogs, rversions APIs"}
+  - {name: r-universe API docs, url: "https://docs.r-universe.dev/browse/api.html"}
+
+# Couldn't identify these. Add a GitHub owner and move to packages.yml, or delete.
+unresolved:
+  - {name: os, theme: meta-code, note: "no such package; fs/ps cover file + process ops"}
+  - {name: funs, theme: meta-code, note: "no such package (dplyr::funs() is a deprecated function)"}
+  - {name: validaterules, theme: data-cleaning, note: "not in the data-cleaning org; maybe validate.adjust?"}
+  - {name: dbplyr_helpers, theme: dbplyr related, note: "owner unknown"}
+  - {name: demoadbcplyr, theme: dbplyr related, note: "owner unknown"}
+  - {name: dabases-w-r, theme: dbplyr related, note: "owner unknown; typo of databases-w-r?"}
+  - {name: intro-database-r, theme: databases, note: "owner unknown; looks like a course repo"}
