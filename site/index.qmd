@@ -24,7 +24,7 @@ if (!nzchar(sources)) sources <- "all ok"
 note      <- \(l) if (is.null(l$note)) "" else paste0(": ", l$note)
 ```
 
-[![cranwatch](https://github.com/cgwweaver/cranwatch/actions/workflows/cranwatch.yml/badge.svg)](https://github.com/cgwweaver/cranwatch/actions/workflows/cranwatch.yml)
+[(https://github.com/cgwweaver/cranwatch/actions/workflows/cranwatch.yml/badge.svg)](https://github.com/cgwweaver/cranwatch/actions/workflows/cranwatch.yml)
 
 **`r nrow(snap)` packages** · run `r run$run_date` · downloads `r run$dl_windows$dl_365[[1]]` to `r run$dl_windows$dl_365[[2]]` · sources `r sources` ·
 [CSV](https://github.com/`r repo`/blob/main/data/latest.csv) · [history](https://github.com/`r repo`/tree/main/data/snapshots) · [edit watchlist](https://github.com/`r repo`/edit/main/packages.yml)
