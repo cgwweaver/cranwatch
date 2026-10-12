@@ -1,6 +1,6 @@
 {
   "run_date": "2026-10-12",
-  "run_time": "2026-10-12 13:56:29 UTC",
+  "run_time": "2026-10-12 15:37:29 UTC",
   "previous": {},
   "dl_windows": {
     "dl_365": ["2025-10-11", "2026-10-10"],
@@ -10,7 +10,7 @@
   "sources": {
     "cran_db": {
       "ok": true,
-      "secs": 1
+      "secs": 0.7
     },
     "cran_in": {
       "ok": true,
@@ -18,16 +18,16 @@
     },
     "ru_index": {
       "ok": true,
-      "secs": 2.4
+      "secs": 1.9
     },
     "ru_detail": {
       "ok": true,
-      "secs": 1.2,
+      "secs": 0.7,
       "formula_match": 1
     },
     "ru_sysdeps": {
       "ok": true,
-      "secs": 0.1
+      "secs": 0
     },
     "downloads": {
       "ok": true,
@@ -35,7 +35,7 @@
     },
     "github": {
       "ok": true,
-      "secs": 3.7
+      "secs": 3.8
     }
   },
   "requests": {
