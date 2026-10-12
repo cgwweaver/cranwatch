@@ -1,10 +1,10 @@
 # cranwatch
 
-[![cranwatch](https://github.com/cgwweaver/cranwatch/actions/workflows/cranwatch.yml/badge.svg)](https://github.com/cgwweaver/cranwatch/actions/workflows/cranwatch.yml)
+[![cranwatch](https://github.com/colin-ww/cranwatch/actions/workflows/cranwatch.yml/badge.svg)](https://github.com/colin-ww/cranwatch/actions/workflows/cranwatch.yml)
 
 Health radar for the R packages I use, or am eyeing, at work: how popular they are, whether CRAN is about to archive them, and how painful they are to install somewhere locked down (air-gapped k8s, source-only mirror, no `apt-get`).
 
-**Site → <https://cgwweaver.github.io/cranwatch/>**: [Radar](https://cgwweaver.github.io/cranwatch/) (the table) · [Themes](https://cgwweaver.github.io/cranwatch/themes.html) (what each group of packages is for and what to pick) · [How to judge a package](https://cgwweaver.github.io/cranwatch/judge.html) · [Columns & sources](https://cgwweaver.github.io/cranwatch/about.html) · [latest CSV](data/latest.csv)
+**Site → <https://colin-ww.github.io/cranwatch/>**: [Radar](https://colin-ww.github.io/cranwatch/) (the table) · [Themes](https://colin-ww.github.io/cranwatch/themes.html) (what each group of packages is for and what to pick) · [How to judge a package](https://colin-ww.github.io/cranwatch/judge.html) · [Columns & sources](https://colin-ww.github.io/cranwatch/about.html) · [latest CSV](data/latest.csv)
 
 Written for colleagues in a stats office moving from SAS to R, but the method works for anyone's package list.
 
@@ -75,5 +75,5 @@ Then `quarto render site` in a terminal (needs the [Quarto CLI](https://quarto.o
 ## Caveats
 
 - Downloads come only from Posit's CRAN mirror and include CI/bots, so treat them as relative.
-- r-universe calls its score formula a work in progress (it's documented on the [about page](https://cgwweaver.github.io/cranwatch/about.html)). Use the component columns for trends.
+- r-universe calls its score formula a work in progress (it's documented on the [about page](https://colin-ww.github.io/cranwatch/about.html)). Use the component columns for trends.
 - CRAN doesn't publish deadline history, so "had a deadline before" only builds up from the first snapshot on.
