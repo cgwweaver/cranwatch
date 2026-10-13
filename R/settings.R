@@ -1,7 +1,7 @@
 # Knobs -----------------------------------------------------------------------
 
 # owner/name of this repo (set by GitHub Actions), so forks identify as themselves
-gh_repo <- Sys.getenv("GITHUB_REPOSITORY", "cgwweaver/cranwatch")
+gh_repo <- Sys.getenv("GITHUB_REPOSITORY", "colin-ww/cranwatch")
 
 settings <- list(
   # Who we are, on every request (r-universe docs + GitHub API ask for a UA)
