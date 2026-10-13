@@ -1,48 +1,45 @@
 {
-  "run_date": "2026-10-12",
-  "run_time": "2026-10-12 15:37:29 UTC",
-  "previous": {},
+  "run_date": "2026-10-13",
+  "run_time": "2026-10-13 00:19:18 UTC",
+  "previous": "2026-10-12",
   "dl_windows": {
-    "dl_365": ["2025-10-11", "2026-10-10"],
-    "dl_prev365": ["2024-10-11", "2025-10-10"]
+    "dl_365": ["2025-10-12", "2026-10-11"],
+    "dl_prev365": ["2024-10-12", "2025-10-11"]
   },
   "n_packages": 163,
   "sources": {
     "cran_db": {
       "ok": true,
-      "secs": 0.7
+      "secs": 1
     },
     "cran_in": {
       "ok": true,
-      "secs": 0.2
+      "secs": 0.3
     },
     "ru_index": {
       "ok": true,
-      "secs": 1.9
+      "secs": 21.4
     },
     "ru_detail": {
       "ok": true,
-      "secs": 0.7,
+      "secs": 24.8,
       "formula_match": 1
     },
     "ru_sysdeps": {
       "ok": true,
-      "secs": 0
+      "secs": 1
     },
     "downloads": {
       "ok": true,
-      "secs": 0
+      "secs": 10.2
     },
     "github": {
       "ok": true,
-      "secs": 3.8
+      "secs": 3.9
     }
   },
   "requests": {
     "sent": {
-      "api.github.com": 8
-    },
-    "from_cache": {
       "cloud.r-project.org": 2,
       "r-universe.dev": 7,
       "cran.r-universe.dev": 18,
@@ -101,7 +98,9 @@
       "gvelasq.r-universe.dev": 1,
       "gabrielrvsc.r-universe.dev": 1,
       "jmping.r-universe.dev": 1,
-      "cranlogs.r-pkg.org": 6
-    }
+      "cranlogs.r-pkg.org": 6,
+      "api.github.com": 8
+    },
+    "from_cache": []
   }
 }
