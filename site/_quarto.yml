@@ -4,8 +4,8 @@ project:
 
 website:
   title: "cranwatch"
-  site-url: "https://cgwweaver.github.io/cranwatch/"
-  repo-url: "https://github.com/cgwweaver/cranwatch"
+  site-url: "https://colin-ww.github.io/cranwatch/"
+  repo-url: "https://github.com/colin-ww/cranwatch"
   navbar:
     left:
       - href: index.qmd
@@ -18,7 +18,7 @@ website:
         text: Columns & sources
     right:
       - icon: github
-        href: "https://github.com/cgwweaver/cranwatch"
+        href: "https://github.com/colin-ww/cranwatch"
 
 format:
   html:
